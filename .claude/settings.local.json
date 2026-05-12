@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx skills *)",
+      "Bash(pip install *)",
+      "Bash(/c/Program Files/Python311/python.exe *)",
+      "Bash(/c/Users/17818/AppData/Local/Programs/Python/Python311/python.exe *)",
+      "Bash(powershell -Command '[Environment]::SetEnvironmentVariable\\('\\\\''Path'\\\\'', [Environment]::GetEnvironmentVariable\\('\\\\''Path'\\\\'', '\\\\''User'\\\\''\\) + '\\\\'';C:\\\\Users\\\\17818\\\\AppData\\\\Local\\\\Programs\\\\Python\\\\Python311\\\\Scripts;C:\\\\Users\\\\17818\\\\AppData\\\\Local\\\\Programs\\\\Python\\\\Python311'\\\\'', '\\\\''User'\\\\''\\)')",
+      "Bash(/c/Users/17818/AppData/Local/Programs/Python/Python311/Scripts/fuck.exe *)",
+      "Bash(git init *)",
+      "Bash(git remote *)",
+      "Bash(git add *)"
+    ]
+  }
+}
