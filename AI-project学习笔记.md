@@ -3463,3 +3463,333 @@ AI 正在输出时显示"正在输入中"，流结束后恢复显示时间戳。
 ### 24.5 可直接粘贴的续写正文
 
 可直接将第 24 节整体追加到原文末尾，无需改动前文结构。
+
+---
+
+## 25. 今日新增代码增量解读（2026-05-12）
+
+本节承接第 24 节，聚焦三个方向的新增：consultation.vue 的情绪花园侧边栏与会话列表渲染、emotionDairy.vue 从占位页到完整情绪日记表单的落地、以及前台 API 层的同步扩展。
+
+### 25.1 续写范围说明
+
+本次覆盖以下文件：
+
+- [src/views/consultation.vue](src/views/consultation.vue)（核心：情绪花园、会话列表渲染、bug 修复）
+- [src/views/emotionDairy.vue](src/views/emotionDairy.vue)（核心：完整情绪日记表单页）
+- [src/api/frontend.js](src/api/frontend.js)（新增 2 个接口）
+- [src/router/index.js](src/router/index.js)（路由结构微调）
+
+不重复第 24 节已讲过的 SSE 流式通信和 MarkdownRenderer，只补本次新增链路。
+
+---
+
+### 25.2 本次新增内容（按 5 模块增量）
+
+#### 1) 整体概述（增量）
+
+今天新增代码把 consultation.vue 从"会话管理 + 流式对话"进一步推进到"情绪花园实时展示 + 会话列表可视化"的阶段。同时，emotionDairy.vue 从占位页升级为一个完整的表单提交页面，用户可以记录每日情绪评分、选择主要情绪、填写触发因素和感想、评估睡眠质量和压力水平。
+
+运行路径新增为：
+
+- AI 对话结束后 -> 自动调用 `loadSessionEmotion` -> 侧边栏情绪花园实时更新（情绪名称、评分、强度指示器、建议卡片、治愈行动清单、风险提示）。
+- 用户进入情绪日记页 -> 选择评分 -> 选择情绪 -> 填写详细记录 -> 提交到后端。
+
+#### 2) 结构拆解（增量）
+
+**A. consultation.vue 新增状态与函数**
+
+新增 import：
+
+- `getSessionEmotion`：从 `@/api/frontend` 引入，用于获取会话的情绪分析结果。
+
+新增状态：
+
+| 状态 | 类型 | 初始值 | 用途 |
+|------|------|--------|------|
+| `currentEmotion` | `ref({})` | `{ primaryEmotion: "中性", emotionScore: 50, isNegative: false, suggestion: "情绪状态平稳", riskLevel: 0, improvementSuggestions: [] }` | 情绪花园的数据源 |
+
+新增函数（4 个）：
+
+1. `loadSessionEmotion(sessionId)`：调用 `getSessionEmotion` 接口，把返回结果写入 `currentEmotion`。
+2. `getIntensityClass(score)`：根据情绪分数返回 1/2/3，用于控制强度指示器的激活数量。
+3. `getRiskText(level)`：把风险等级数字映射为中文文案（正常/关注/预警/危机）。
+4. `formatMessageContent(content)`：简单的 `\n` → `<br>` 换行处理。
+
+**B. emotionDairy.vue 完整结构**
+
+新增 import：
+
+- `ref`、`reactive`：管理表单数据。
+- `dayjs`、`ElMessage`：日期格式化和消息提示。
+- `addEmotionDiary`：从 `@/api/frontend` 引入，提交情绪日记。
+
+新增状态：
+
+| 状态 | 类型 | 用途 |
+|------|------|------|
+| `diaryForm` | `reactive({})` | 表单数据对象，包含 diaryDate、moodScore、dominantEmotion、emotionTriggers、diaryContent、sleepQuality、stressLevel |
+| `emotionStatus` | 数组（10 项） | el-rate 的评分文字映射 |
+| `emotionOptions` | 数组（8 项） | 主要情绪选项，每项包含 name 和图片 URL |
+
+新增函数（3 个）：
+
+1. `selectEmotion(emotion)`：点击情绪卡片后写入 `diaryForm.dominantEmotion`。
+2. `resetForm()`：重置所有表单字段为初始值。
+3. `submitForm()`：校验评分、调用 `addEmotionDiary` 接口、成功后重置表单。
+
+**C. frontend.js 新增接口**
+
+- `getSessionEmotion(sessionId)`：GET `/psychological-chat/session/${sessionId}/emotion`
+- `addEmotionDiary(data)`：POST `/emotion-diary`
+
+#### 3) 逐段解释（增量）
+
+**A. `loadSessionEmotion` —— 情绪花园的数据来源**
+
+```js
+const loadSessionEmotion = (sessionId) => {
+  const id = sessionId.toString().startsWith("session_")
+    ? sessionId
+    : `session_${sessionId}`;
+  getSessionEmotion(id).then((res) => {
+    currentEmotion.value = res || {};
+  });
+};
+```
+
+- 这个函数在两个地方被调用：SSE 流结束时（`onmessage` 收到 `done` 事件）和 `onclose` 回调。
+- `sessionId` 格式处理：如果已经是 `session_xxx` 格式就直接用，否则补前缀。这是因为 `currentSession.sessionId` 在创建新会话后会被赋值为 `res.sessionId`（后端返回），而在点击历史会话时会被赋值为 `session_${session.id}`，两种格式不统一。
+- `res || {}` 是防空处理，防止接口返回 null/undefined 时模板访问属性报错。
+
+为什么要调用两次（`done` 事件和 `onclose`）：
+
+- `done` 事件是后端显式标记的流结束信号，此时 AI 回复已经完整。
+- `onclose` 是连接关闭回调，作为兜底。
+- 但这也意味着同一个 sessionId 会请求两次情绪接口，后续可以优化为只调用一次。
+
+**B. `getIntensityClass` —— 强度指示器的分档逻辑**
+
+```js
+const getIntensityClass = (score) => {
+  if (score >= 61) return 3;
+  if (score >= 31) return 2;
+  return 1;
+};
+```
+
+模板中的用法：
+
+```html
+<span v-for="dot in 3" :key="dot" class="dot"
+  :class="{ active: getIntensityClass(currentEmotion.emotionScore) >= dot }">
+</span>
+```
+
+- 循环渲染 3 个 dot，`dot` 的值依次为 1、2、3。
+- `getIntensityClass` 返回 1/2/3，和 `dot` 比较后决定哪些 dot 加 `active` 类。
+- score < 31 → 返回 1 → 只有第 1 个 dot 激活（低强度）。
+- 31 ≤ score < 61 → 返回 2 → 前 2 个 dot 激活（中强度）。
+- score ≥ 61 → 返回 3 → 全部 3 个 dot 激活（高强度）。
+
+`.dot.active` 的样式：粉色渐变背景 + scale(1.2) 放大 + 粉色阴影，视觉上从灰色小圆点变成粉色发光圆点。
+
+**C. 情绪花园模板的条件渲染**
+
+情绪花园侧边栏包含五个信息层：
+
+1. **情绪圆圈**：显示当前情绪名称和评分，使用粉色渐变圆形背景。
+2. **状态文字**：根据 `currentEmotion.isNegative` 显示"很不错"或"需要关注"。
+3. **强度指示器**：3 个 dot + 风险等级文字（`getRiskText`）。
+4. **温暖建议卡片**：`v-if="currentEmotion.suggestion"` 控制显示，展示 AI 给出的建议。
+5. **治愈行动清单**：`v-if="currentEmotion.improvementSuggestions.length > 0"` 控制显示，用 `v-for` 渲染改善建议列表。
+6. **风险提示**：`v-if="currentEmotion.isNegative && currentEmotion.riskLevel > 1"` 控制，只有负面情绪且风险等级大于 1 时才显示。
+
+这种分层条件渲染的好处是：情绪花园的内容会根据后端返回的数据动态变化，情绪好的时候只显示基本状态，情绪差的时候会额外显示建议和风险提示。
+
+**D. `handleKeyDown` 的 bug 修复**
+
+第 24 节指出的问题：缺少 `e.preventDefault()` 和 `!e.shiftKey` 检查。
+
+当前代码已修复：
+
+```js
+const handleKeyDown = (e) => {
+  if (e.key === "Enter" && !e.shiftKey) {
+    e.preventDefault();
+    // ...
+  }
+};
+```
+
+- `!e.shiftKey`：按住 Shift + Enter 时不会触发发送，只做换行。
+- `e.preventDefault()`：阻止 textarea 的默认换行行为，避免发送的同时多出一个空行。
+
+**E. `handleSessionClick` 的 bug 修复**
+
+第 23 节和第 24 节都指出：点击历史会话后没有更新 `currentSession`。
+
+当前代码已修复：
+
+```js
+const handleSessionClick = (session) => {
+  getSessionDetail(session.id).then((res) => {
+    messages.value = res || [];
+  });
+  loadSessionEmotion(session.id);
+  const sessionData = {
+    sessionId: `session_${session.id}`,
+    status: "ACTIVE",
+    sessionTitle: session.sessionTitle,
+  };
+  currentSession.value = sessionData;
+};
+```
+
+- 新增 `currentSession.value = sessionData`，把点击的会话设为当前活跃会话。
+- `status: "ACTIVE"` 标记这不是临时会话，后续发消息时会走 `else` 分支（在已有会话中追加），而不是创建新会话。
+- 同时新增 `loadSessionEmotion(session.id)`，点击历史会话时也会加载情绪花园数据。
+
+**F. `sendMessage` 的完整流程**
+
+第 23 节的 `sendMessage` 只处理了 `Temp` 分支，当前代码已经补全了两个分支：
+
+```js
+if (currentSession.value.status === "Temp") {
+  startNewSession(message);
+} else {
+  messages.value.push({
+    id: Date.now(),
+    senderType: 1,
+    content: message,
+    createdAt: new Date().toISOString(),
+  });
+  startAIResponse(currentSession.value.sessionId, message);
+}
+```
+
+- `Temp` 分支：先创建后端会话，再发消息。
+- `else` 分支：直接追加用户消息到列表，然后发起 SSE 流式请求。
+
+这说明用户可以在已有会话中持续对话，而不需要每次都创建新会话。
+
+**G. emotionDairy.vue 的 `el-rate` 组件**
+
+```html
+<el-rate v-model="diaryForm.moodScore" :texts="emotionStatus" show-text :max="10" size="large" />
+```
+
+- `:texts="emotionStatus"`：传入 10 个评分文字，索引 0-9 对应评分 1-10。
+- `show-text`：显示当前评分对应的文字（注意：之前写成了 `show-texts`，已修复为 `show-text`）。
+- `:max="10"`：最大评分 10 分。
+- `emotionStatus` 数组从"绝望崩溃"到"极致幸福"，覆盖了从极度负面到极度正面的完整情绪谱。
+
+**H. emotionDairy.vue 的情绪选择网格**
+
+```html
+<div v-for="emotion in emotionOptions" :key="emotion.name" class="emotion-card"
+  @click="selectEmotion(emotion.name)"
+  :class="{ selected: emotion.name === diaryForm.dominantEmotion }">
+```
+
+- 8 种情绪选项，每种都有对应的图片。
+- 点击后 `diaryForm.dominantEmotion` 被设为该情绪名称。
+- `.selected` 类让被选中的卡片有绿色边框和上移效果。
+
+**I. emotionDairy.vue 的提交逻辑**
+
+```js
+const submitForm = () => {
+  if (!diaryForm.moodScore) {
+    ElMessage.error("请选择您的情绪评分");
+    return;
+  }
+  addEmotionDiary(diaryForm).then((res) => {
+    ElMessage.success("提交成功");
+    resetForm();
+  });
+};
+```
+
+- 只校验了 `moodScore` 是否存在，其他字段没有校验。
+- 提交成功后重置整个表单。
+- 没有 `catch` 处理，如果接口失败，用户看不到错误提示。
+
+#### 4) 流程梳理（增量）
+
+**A. 情绪花园实时更新链路**
+
+1. 用户在 consultation.vue 中发送消息。
+2. SSE 流式对话开始。
+3. 后端发送 `event: done`，`onmessage` 捕获到结束信号。
+4. `loadSessionEmotion(currentSession.value.sessionId)` 被调用。
+5. 接口返回情绪分析结果，写入 `currentEmotion`。
+6. 模板响应式更新：情绪圆圈、状态文字、强度指示器、建议卡片、治愈行动清单、风险提示根据数据条件渲染。
+7. `onclose` 回调再次调用 `loadSessionEmotion`（兜底）。
+
+**B. 情绪日记提交链路**
+
+1. 用户进入 `/emotion-diary` 路由。
+2. `emotionDairy.vue` 渲染完整的日记表单。
+3. 用户点击星星评分，`diaryForm.moodScore` 更新，评分文字实时显示。
+4. 用户点击情绪卡片，`diaryForm.dominantEmotion` 更新，卡片高亮。
+5. 用户填写触发因素和感想。
+6. 用户选择睡眠质量和压力水平。
+7. 点击"提交记录"，`submitForm` 先校验评分，再调用 `addEmotionDiary`。
+8. 接口成功后重置表单。
+
+**C. 点击历史会话加载情绪花园链路**
+
+1. 用户点击侧边栏某个会话。
+2. `handleSessionClick` 被调用。
+3. `getSessionDetail` 拉取消息列表，写入 `messages`。
+4. `loadSessionEmotion` 拉取情绪分析结果，写入 `currentEmotion`。
+5. `currentSession` 更新为该会话的正式状态。
+6. 消息区和情绪花园同时更新。
+
+#### 5) 总结笔记（增量）
+
+**核心知识点**
+
+1. **条件渲染驱动的动态侧边栏**：情绪花园的内容完全由后端数据决定，好的时候只显示基本状态，差的时候叠加建议和风险提示。这种"数据驱动 UI 密度"的模式很适合健康类、金融类等需要根据指标动态调整信息展示的场景。
+2. **`v-for` + 数值比较实现指示器**：3 个 dot 通过 `v-for` 循环渲染，再用数值比较决定激活状态。这种写法比手写 3 个独立 span 更简洁，扩展到 N 个 dot 也只需要改 `v-for` 的上限。
+3. **`el-rate` 的 `texts` 属性**：传入数组后，组件内部自动用 `texts[value - 1]` 映射文字，不需要手动写映射逻辑。`show-text` 控制是否显示。
+4. **Session ID 格式统一问题**：`loadSessionEmotion` 里做了 `session_` 前缀的兼容处理，说明前后端对 sessionId 的格式约定不一致。后续最好在后端统一返回格式，或者在前端统一管理。
+5. **情绪日记的轻量校验**：只校验了评分，没有校验其他字段。对于日记类应用，这种"鼓励提交、减少阻断"的策略是合理的，但关键字段（如评分）仍需要校验。
+
+**可复用写法**
+
+1. "情绪花园"式的条件渲染侧边栏，可复用于健康监测、金融风控等需要根据数据动态调整展示密度的场景。
+2. `getIntensityClass` 的分档返回 + `v-for` 比较模式，可复用于任何"N 级指示器"场景（信号强度、电量、评分星级等）。
+3. `el-rate` + `texts` + `show-text` 的组合，可直接复用于所有需要评分+文字描述的表单场景。
+4. `emotionOptions` 的图片+名称数组结构，可复用于心情选择、标签选择等需要图文混排的选项卡。
+
+**新增易错点与避坑建议**
+
+1. `loadSessionEmotion` 在 `done` 事件和 `onclose` 中被调用了两次，同一个 sessionId 会请求两次情绪接口。建议只保留一处调用。
+2. `sessionId` 格式不统一（有时是纯数字，有时是 `session_` 前缀），`loadSessionEmotion` 里的兼容处理是临时方案，后续应统一。
+3. `emotionDairy.vue` 的 `submitForm` 没有 `catch` 处理，接口失败时用户看不到错误提示。
+4. `el-rate` 的 `show-text` 属性之前写成了 `show-texts`，已修复。Element Plus 的属性名要严格对照文档。
+5. `emotionDairy.vue` 的样式中 `.consultation-container` 重复定义了两次（整个样式块在文件中出现了两遍），这是冗余代码，后续应清理。
+6. `handleDeletSession` 仍然没有二次确认弹窗，也没有 `@click.stop` 修饰符，删除按钮点击时会冒泡触发 `handleSessionClick`。
+
+### 25.3 修订点清单
+
+- **修订点 1**：第 24 节中"handleKeyDown 缺少 e.preventDefault()" -> 新结论应调整为"已修复，现在有 `!e.shiftKey` 和 `e.preventDefault()`"。
+  - 触发原因：本次 `handleKeyDown` 已补充完整条件判断。
+  - 影响范围：第 22 节、第 23 节、第 24 节易错点。
+
+- **修订点 2**：第 24 节中"handleSessionClick 没有更新 currentSession" -> 新结论应调整为"已修复，点击历史会话后会正确设置 currentSession 为 ACTIVE 状态"。
+  - 触发原因：本次 `handleSessionClick` 已补充 `currentSession.value = sessionData`。
+  - 影响范围：第 23 节、第 24 节易错点。
+
+- **修订点 3**：第 22 节中"emotionDairy.vue 是占位页" -> 新结论应调整为"已实现完整的情绪日记表单，包含评分、情绪选择、详细记录、生活指标和提交功能"。
+  - 触发原因：本次 `emotionDairy.vue` 从占位页升级为完整表单页。
+  - 影响范围：第 22 节文件列表、第 10 节完成度判断。
+
+- **修订点 4**：第 22 节中 `frontend.js` 方法列表 -> 新结论应补充 `getSessionEmotion` 和 `addEmotionDiary`。
+  - 触发原因：本次 `frontend.js` 新增 2 个接口方法。
+  - 影响范围：第 22 节 API 层分析、第 23 节 API 层分析。
+
+### 25.4 可直接粘贴的续写正文
+
+可直接将第 25 节整体追加到原文末尾，无需改动前文结构。
