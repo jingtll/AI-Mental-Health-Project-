@@ -9,7 +9,8 @@
       "Bash(/c/Users/17818/AppData/Local/Programs/Python/Python311/Scripts/fuck.exe *)",
       "Bash(git init *)",
       "Bash(git remote *)",
-      "Bash(git add *)"
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)"
     ]
   }
 }

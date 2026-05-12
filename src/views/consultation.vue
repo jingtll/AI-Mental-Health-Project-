@@ -5,6 +5,7 @@ import {
   getSessionList,
   deleteSession,
   getSessionDetail,
+  getSessionEmotion,
 } from "@/api/frontend";
 import {
   ElMessage,
@@ -43,6 +44,16 @@ const currentEmotion = ref({
   riskLevel: 0,
   improvementSuggestions: [],
 });
+const loadSessionEmotion = (sessionId) => {
+  //确保sessionID格式正确
+  const id = sessionId.toString().startsWith("session_")
+    ? sessionId
+    : `session_${sessionId}`;
+  getSessionEmotion(id).then((res) => {
+    currentEmotion.value = res || {};
+    console.log(res);
+  });
+};
 const getIntensityClass = (score) => {
   if (score >= 61) {
     return 3;
@@ -185,6 +196,7 @@ const startAIResponse = (sessionId, userMessage) => {
       if (eventName === "done") {
         isAiTyping.value = false;
         ctrl.abort();
+        loadSessionEmotion(currentSession.value.sessionId);
         return;
       }
       const payLoad = JSON.parse(raw);
@@ -202,6 +214,7 @@ const startAIResponse = (sessionId, userMessage) => {
     },
     onclose: () => {
       //开始情绪分析
+      loadSessionEmotion(currentSession.value.sessionId);
     },
   });
 };
@@ -228,6 +241,7 @@ const handleSessionClick = (session) => {
   getSessionDetail(session.id).then((res) => {
     messages.value = res || [];
   });
+  loadSessionEmotion(session.id);
   //更新当前会话对象数据
   const sessionData = {
     sessionId: `session_${session.id}`,
