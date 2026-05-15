@@ -20,3 +20,6 @@ export const getSessionEmotion = (sessionId) => {
 export const addEmotionDiary = (data) => {
   return service.post("/emotion-diary", data);
 };
+export const getKnowledgeList = (params) => {
+  return service.get("/knowledge/article/page", { params });
+};

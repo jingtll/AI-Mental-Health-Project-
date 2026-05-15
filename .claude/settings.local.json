@@ -10,7 +10,11 @@
       "Bash(git init *)",
       "Bash(git remote *)",
       "Bash(git add *)",
-      "Bash(git commit -m ' *)"
+      "Bash(git commit -m ' *)",
+      "WebSearch",
+      "Bash(npm search *)",
+      "Bash(claude mcp *)",
+      "Bash(npm info *)"
     ]
   }
 }
