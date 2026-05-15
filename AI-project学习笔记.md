@@ -3793,3 +3793,290 @@ const submitForm = () => {
 ### 25.4 可直接粘贴的续写正文
 
 可直接将第 25 节整体追加到原文末尾，无需改动前文结构。
+
+---
+
+## 26. 今日新增代码增量解读（2026-05-15）
+
+本节承接第 25 节，聚焦前台知识库页面从占位页到完整文章列表+详情页的落地，以及前台 API 层和路由的同步扩展。这一批代码补齐了前台用户端最后一个重要业务页面。
+
+### 26.1 续写范围说明
+
+本次覆盖以下文件：
+
+- [src/views/frontendKnowledge.vue](src/views/frontendKnowledge.vue)（核心：前台知识库文章列表页）
+- [src/views/articleDetail.vue](src/views/articleDetail.vue)（新增：文章详情页）
+- [src/api/frontend.js](src/api/frontend.js)（新增 2 个接口方法）
+- [src/router/index.js](src/router/index.js)（新增文章详情动态路由）
+
+不重复第 25 节已讲过的 consultation.vue 和 emotionDairy.vue，只补本次新增的知识库链路。
+
+---
+
+### 26.2 本次新增内容（按 5 模块增量）
+
+#### 1) 整体概述（增量）
+
+- `frontendKnowledge.vue` 从第 22 节描述的"占位页"演进为完整的前台文章列表页，包含左侧推荐阅读区、右侧文章列表区和底部分页。
+- 新增 `articleDetail.vue`，作为文章详情展示页，通过动态路由 `knowledge/article/:id` 接收文章 ID。
+- 前台 API 层新增 `getKnowledgeList` 和 `getKnowledgeDetail`，前台用户端现在可以独立完成知识文章的浏览和查看，不依赖后台管理端的 API。
+
+运行路径新增为：
+
+> 用户进入知识库页 -> 拉取推荐阅读列表（按阅读量排序）+ 拉取文章分页列表 -> 点击文章 -> 路由跳转到 `/knowledge/article/:id` -> articleDetail 拉取文章详情 -> 展示标题、摘要、正文、标签。
+
+#### 2) 结构拆解（增量）
+
+**A. frontendKnowledge.vue 完整结构**
+
+新增 import 与依赖价值：
+
+- `getKnowledgeList`：从 `@/api/frontend` 引入，拉取文章分页列表。
+- `Platform`：Element Plus 图标，用于阅读量展示。
+- `dayjs`：日期格式化。
+- `useRouter`：文章点击后跳转到详情页。
+
+新增状态与字段：
+
+| 状态 | 类型 | 用途 |
+|------|------|------|
+| `recommendList` | `ref([])` | 左侧推荐阅读列表（按阅读量排序） |
+| `articleList` | `ref([])` | 右侧文章分页列表 |
+| `pagination` | `reactive({})` | 分页参数：currentPage、size、total |
+
+核心函数（4 个）：
+
+1. `getPageList()`：拉取文章分页列表，参数包含排序字段和分页信息。
+2. `getImage(url)`：封面图片 URL 拼接，无封面时返回 base64 占位图。
+3. `handleChange(page)`：分页切换并重新拉取数据。
+4. `goToArticle(id)`：路由跳转到文章详情页。
+
+**B. articleDetail.vue 完整结构**
+
+新增 import 与依赖价值：
+
+- `getKnowledgeDetail`：从 `@/api/frontend` 引入，拉取文章详情。
+- `Avatar`、`Platform`：Element Plus 图标，用于作者和阅读量展示。
+- `dayjs`：日期格式化。
+
+Props 设计：
+
+- `id`：通过路由 `props: true` 透传，类型为 String。
+
+新增状态与字段：
+
+| 状态 | 类型 | 用途 |
+|------|------|------|
+| `articleDetail` | `ref({})` | 文章详情数据对象 |
+
+核心函数（2 个）：
+
+1. `formatContent(content)`：简单的 Markdown 转 HTML（换行、粗体、斜体）。
+2. `onMounted` 中调用 `getKnowledgeDetail(props.id)` 获取详情。
+
+**C. frontend.js 新增接口**
+
+- `getKnowledgeList(params)`：GET `/knowledge/article/page`，拉取文章分页列表。
+- `getKnowledgeDetail(id)`：GET `/knowledge/article/${id}`，拉取文章详情。
+
+这两个方法和后台 `admin.js` 里的 `articlePage` 走的是同一套后端接口，但前台版本面向普通用户浏览，不需要后台鉴权。
+
+**D. router/index.js 新增路由**
+
+```js
+{
+  path: "knowledge/article/:id",
+  component: () => import("@/views/articleDetail.vue"),
+  props: true,
+}
+```
+
+- `props: true` 把路由参数 `:id` 作为 props 传给组件，组件不需要通过 `useRoute()` 获取。
+- 路径挂在 `FrontendLayout` 下，说明文章详情页也使用前台布局壳。
+
+#### 3) 逐段解释（增量）
+
+**A. `getPageList()` 的参数构建**
+
+```js
+const params = {
+  sortField: "publishedAt",
+  SortDirection: "desc",
+  ...pagination,
+};
+```
+
+- `sortField: "publishedAt"` 按发布时间排序，和左侧推荐阅读按 `readCount` 排序形成"最新发布 vs 最热门"的双维度。
+- `...pagination` 把 `currentPage`、`size`、`total` 展开到参数里，其中 `total` 是多余的（后端不需要），但不影响接口调用。
+- 注意 `SortDirection` 首字母大写，和 `sortField` 大小写不一致。如果后端严格区分参数名，这里可能会导致排序失效。
+
+**B. `getImage(url)` 的封面回退机制**
+
+```js
+const getImage = (url) => {
+  return url
+    ? "http://159.75.169.224:1235" + url
+    : "data:image/webp;base64,UklGRpgcAABX...";
+};
+```
+
+- 有封面时，拼接文件服务器基地址（硬编码 IP）。
+- 无封面时，返回一个内联的 base64 占位图，避免图片区域空白。
+- 这里的 `fileBaseUrl` 硬编码成了 IP 地址，和第 15 节中 `src/config/index.js` 里定义的 `fileBaseUrl` 不一致。后续应统一使用配置化的 `fileBaseUrl`。
+
+**C. `goToArticle(id)` 的路由跳转**
+
+```js
+const goToArticle = (id) => {
+  router.push(`/knowledge/article/${id}`);
+};
+```
+
+- 使用 `router.push` 进行声明式跳转，和后台管理端的 `router-link` 不同。
+- 模板中通过 `@click="goToArticle(item.id)"` 绑定，左侧推荐阅读和右侧文章列表共用同一个跳转函数。
+
+**D. `onMounted` 的双重请求**
+
+```js
+onMounted(() => {
+  const params = {
+    sortField: "readCount",
+    SortDirection: "desc",
+    currentPage: 1,
+    size: 5,
+  };
+  getPageList();
+  getKnowledgeList(params).then((res) => {
+    recommendList.value = res.records;
+  });
+});
+```
+
+- 页面挂载时同时发起两个请求：文章分页列表（按发布时间）和推荐阅读列表（按阅读量前 5）。
+- 这两个请求互相独立，用 `Promise` 并行执行，没有依赖关系。
+- 推荐列表的 `size: 5` 限制了左侧栏只显示 5 篇热门文章。
+
+**E. articleDetail.vue 的 `formatContent`**
+
+```js
+const formatContent = (content) => {
+  if (!content) return "";
+  let formatted = content
+    .replace(/\n/g, "<br>")
+    .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+    .replace(/\*(.*?)\*/g, "<em>$1</em>");
+  return formatted;
+};
+```
+
+- 这是一个极简的 Markdown 转 HTML 函数，只处理换行、粗体和斜体。
+- 和 `MarkdownRenderer.vue` 相比功能非常有限，不支持代码块、标题、列表、链接等。
+- 用 `v-html` 渲染，存在 XSS 风险。如果后端返回的内容包含恶意脚本，会被直接执行。
+- 后续建议复用 `MarkdownRenderer` 组件，或者把 `formatContent` 扩展为完整的解析器。
+
+**F. articleDetail.vue 的模板结构**
+
+详情页分为两个卡片：
+
+1. **文章信息卡片**：分类标签 + 更新日期 + 文章标题 + 摘要（绿色左边框高亮块）+ 作者 + 阅读量。
+2. **正文内容卡片**：正文 HTML（`v-html`）+ 标签列表（`el-tag` 数组）。
+
+- 摘要区域使用 `v-if="articleDetail.summary"` 条件渲染，无摘要时不显示。
+- 标签区域使用 `v-if="articleDetail.tagArray && articleDetail.tagArray.length > 0"` 条件渲染。
+- 正文使用 `:deep()` 穿透 scoped 样式，控制富文本内部的标题、段落、列表样式。
+
+**G. consultation.vue 的发送按钮更新**
+
+第 22 节指出"发送按钮没有绑定 `@click` 事件"，当前代码已修复：
+
+```html
+<el-button
+  :disabled="!userMessage.trim() || userMessage.length > 500"
+  type="primary"
+  class="send-btn"
+  @click="sendMessage"
+>
+```
+
+- 新增 `@click="sendMessage"`，鼠标用户现在可以点击按钮发送消息。
+- 新增 `:disabled` 条件：空内容或超过 500 字时禁用发送。
+- 输入框底部新增字数统计 `{{ userMessage.length }}/500`。
+
+#### 4) 流程梳理（增量）
+
+**A. 知识库页面加载链路**
+
+1. 用户进入 `/knowledge`。
+2. `onMounted` 同时发起两个请求。
+3. `getPageList()` 拉取文章分页列表，写入 `articleList` 和 `pagination`。
+4. `getKnowledgeList({ sortField: "readCount", size: 5 })` 拉取推荐阅读，写入 `recommendList`。
+5. 模板渲染左侧推荐阅读区和右侧文章列表区。
+6. 用户点击文章，`goToArticle(id)` 触发路由跳转。
+
+**B. 文章详情页加载链路**
+
+1. 用户点击文章，路由跳转到 `/knowledge/article/:id`。
+2. 路由匹配 `knowledge/article/:id`，渲染 `articleDetail.vue`。
+3. `props: true` 把 `:id` 作为 props 传入组件。
+4. `onMounted` 调用 `getKnowledgeDetail(props.id)`。
+5. 接口返回文章详情，写入 `articleDetail`。
+6. 模板渲染标题、摘要、正文、标签和元信息。
+
+**C. 分页切换链路**
+
+1. 用户点击分页条的页码。
+2. `el-pagination` 的 `@change` 触发 `handleChange(page)`。
+3. `pagination.currentPage` 更新为新页码。
+4. `getPageList()` 重新请求当前页数据。
+5. `articleList` 更新，表格刷新。
+
+#### 5) 总结笔记（增量）
+
+**核心知识点**
+
+1. **`props: true` 透传路由参数**：这是 Vue Router 的标准做法，把 URL 参数直接作为组件 props 传入，比 `useRoute().params` 更干净，也更容易做单元测试。
+2. **双列表并行加载**：推荐阅读和文章列表互相独立，同时发起请求，没有依赖关系。这种"并行初始化"比串行更快，适合页面首屏有多个独立数据块的场景。
+3. **封面图回退机制**：`getImage()` 用三元判断 + base64 占位图，避免了无封面时图片区域塌陷。这种写法在内容类页面很常见。
+4. **前台 API 层和后台 API 层的复用**：`getKnowledgeList` 和后台 `admin.js` 里的 `articlePage` 走的是同一套后端接口，但前台版本更轻量，不需要管理端鉴权。
+5. **文章详情页的两层信息结构**：元信息（分类、日期、作者、阅读量）和正文内容分开展示，适合内容消费型页面。
+
+**可复用写法**
+
+1. "左侧推荐 + 右侧列表 + 底部分页"的三段式布局，可复用于博客、新闻、教程等内容列表页。
+2. `getImage()` 的封面回退模式，可复用于所有需要图片展示但图片可能为空的列表场景。
+3. `props: true` + `defineProps({ id: String })` 的路由参数透传模式，可复用于所有详情页。
+4. `formatContent()` 的简单 Markdown 转 HTML 模式，适合快速原型，但生产环境建议使用完整解析器。
+
+**新增易错点与避坑建议**
+
+1. `getImage()` 里的 `fileBaseUrl` 硬编码成了 IP 地址（`http://159.75.169.224:1235`），和 `src/config/index.js` 里的配置不一致。后续应统一使用 `fileBaseUrl` 常量。
+2. `formatContent()` 使用 `v-html` 直出 HTML，存在 XSS 风险。如果后端内容来源不可信，需要先做净化处理。
+3. `formatContent()` 只处理了换行、粗体和斜体，不支持代码块、标题、列表等 Markdown 语法。后续建议复用 `MarkdownRenderer` 组件。
+4. `getPageList()` 的参数里 `SortDirection` 首字母大写，和 `sortField` 大小写不一致。如果后端严格区分参数名，可能导致排序失效。
+5. `pagination` 里的 `total` 也会被展开到请求参数里，虽然后端通常会忽略多余字段，但最好只传 `currentPage` 和 `size`。
+6. `articleDetail.vue` 在 `getKnowledgeDetail` 失败时没有 catch 处理，如果接口异常，页面会一直显示空内容。
+7. `articleDetail.updatedAt` 在数据加载完成前是 `undefined`，`dayjs(undefined)` 会报错。模板中应加可选链 `articleDetail.updatedAt` 或用 `v-if` 包裹。
+8. `consultation.vue` 中仍然存在未使用的 import `ROOT_PICKER_IS_DEFAULT_FORMAT_INJECTION_KEY`，虽然不影响运行，但会产生 lint 警告。
+9. `consultation.vue` 的样式块 `.consultation-container` 在文件中重复定义了两遍（第 524 行和第 1096 行），这是冗余代码，后续应清理。
+
+### 26.3 修订点清单
+
+- **修订点 1**：第 22 节中 `frontendKnowledge.vue` 被标记为"占位页" -> 新结论应调整为"已实现完整的文章列表页，包含推荐阅读、分页列表和文章详情跳转"。
+  - 触发原因：本次 `frontendKnowledge.vue` 从占位页升级为完整列表页。
+  - 影响范围：第 22 节文件列表、第 10 节项目完成度判断。
+
+- **修订点 2**：第 22 节中 `frontend.js` 只有 `register` 和 `startSession` 两个方法 -> 新结论应补充 `getKnowledgeList` 和 `getKnowledgeDetail`。
+  - 触发原因：本次 `frontend.js` 新增 2 个知识库接口方法。
+  - 影响范围：第 22 节 API 层分析、第 23 节 API 层分析。
+
+- **修订点 3**：第 22 节中"发送按钮没有绑定 @click 事件" -> 新结论应调整为"已修复，发送按钮绑定了 @click='sendMessage'，并新增了 disabled 条件和字数统计"。
+  - 触发原因：本次 `consultation.vue` 的发送按钮更新。
+  - 影响范围：第 22 节易错点分析。
+
+- **修订点 4**：第 10 节"知识文章列表/编辑/新增"中的前台知识库部分 -> 新结论应调整为"前台知识库已实现文章浏览和详情查看，但后台管理端的 CRUD 已在第 17 节完成"。
+  - 触发原因：本次前台知识库页面完整落地。
+  - 影响范围：第 10 节完成度判断、第 11 节学习建议。
+
+### 26.4 可直接粘贴的续写正文
+
+可直接将第 26 节整体追加到原文末尾，无需改动前文结构。

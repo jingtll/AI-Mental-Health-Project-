@@ -3,6 +3,8 @@ import { getKnowledgeList } from "@/api/frontend";
 import { Platform } from "@element-plus/icons-vue";
 import { dayjs } from "element-plus";
 import { ref, reactive, onMounted } from "vue";
+import { useRouter } from "vue-router";
+const router = useRouter();
 const iconUrl = new URL("@/assets/images/book.png", import.meta.url).href;
 //推荐阅读列表
 const recommendList = ref([]);
@@ -36,7 +38,9 @@ const handleChange = (page) => {
   getPageList();
 };
 //跳转详情页面
-const goToArticle = (id) => {};
+const goToArticle = (id) => {
+  router.push(`/knowledge/article/${id}`);
+};
 onMounted(() => {
   //获取推荐阅读列表
   const params = {
