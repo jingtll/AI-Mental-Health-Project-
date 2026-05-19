@@ -50,8 +50,16 @@ const loadSessionEmotion = (sessionId) => {
     ? sessionId
     : `session_${sessionId}`;
   getSessionEmotion(id).then((res) => {
-    currentEmotion.value = res || {};
-    console.log(res);
+    currentEmotion.value = {
+      primaryEmotion: "中性",
+      emotionScore: 50,
+      isNegative: false,
+      suggestion: "情绪状态平稳",
+      riskLevel: 0,
+      improvementSuggestions: [],
+      ...res,
+    };
+    // console.log(res);
   });
 };
 const getIntensityClass = (score) => {
@@ -96,7 +104,7 @@ const sendMessage = () => {
   }
   const message = userMessage.value.trim();
   userMessage.value = "";
-  //如果没有回话或者是临时会话，就需要创建一个新的会话记录
+  //如果没有会话或者是临时会话，就需要创建一个新的会话记录
   if (currentSession.value.status === "Temp") {
     startNewSession(message);
   } else {
@@ -182,7 +190,7 @@ const startAIResponse = (sessionId, userMessage) => {
     }),
     signal: ctrl.signal, //添加取消信号
     onopen: (response) => {
-      console.log(response);
+      // console.log(response);
       if (response.headers.get("content-type") !== "text/event-stream") {
         ElMessage.error("服务器返回的不是流式格式");
       }
@@ -236,7 +244,7 @@ const getSessionPage = () => {
 };
 //获取会话数据
 const handleSessionClick = (session) => {
-  console.log(session);
+  // console.log(session);
   //点击会话时，获取会话详情
   getSessionDetail(session.id).then((res) => {
     messages.value = res || [];
@@ -328,7 +336,7 @@ onMounted(() => {
           <!-- 治愈行动清单 -->
           <div
             class="healing-actions"
-            v-if="currentEmotion.improvementSuggestions.length > 0"
+            v-if="currentEmotion.improvementSuggestions?.length > 0"
           >
             <div class="acitons-title">治愈小行动</div>
             <div class="actions-list">

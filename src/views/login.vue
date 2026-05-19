@@ -20,7 +20,7 @@ const submitForm = async (formEl) => {
       login(formData).then((data) => {
         //判断token·是否存在·
         if (!data.token) {
-          return console.error("登陆失败");
+          return console.error("登录失败");
         }
         //登录成功，保存token和用户信息
         localStorage.setItem("token", data.token);
@@ -45,7 +45,7 @@ const submitForm = async (formEl) => {
         <span>返回首页</span>
       </div>
       <div class="title-text">
-        <h2>登陆您的帐户</h2>
+        <h2>登录您的账户</h2>
         <p>请输入您的信息</p>
       </div>
     </div>
@@ -70,6 +70,7 @@ const submitForm = async (formEl) => {
             placeholder="请输入密码"
             type="password"
             show-password
+            @keyup.enter="submitForm(ruleFormRef)"
           />
         </el-form-item>
         <el-button
@@ -78,7 +79,7 @@ const submitForm = async (formEl) => {
           size="large"
           @click="submitForm(ruleFormRef)"
         >
-          登陆
+          登录
         </el-button>
       </el-form>
       <div class="footer">

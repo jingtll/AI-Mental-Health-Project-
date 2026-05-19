@@ -390,7 +390,7 @@ const initUserActiveChart = () => {
 
 onMounted(() => {
   getAnalyticsOverview().then((res) => {
-    console.log(res);
+    // console.log(res);
     aiData.value = res;
     initCharts();
   });

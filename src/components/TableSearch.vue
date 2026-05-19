@@ -14,7 +14,7 @@ const isComp = (comp) => {
   return { input: "el-input", select: "el-select" }[comp];
 };
 const handleSearch = () => {
-  console.log(formData);
+  // console.log(formData);
   emit("search", formData);
 };
 const handleReset = (formEl) => {

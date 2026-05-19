@@ -4,10 +4,10 @@ import { useRouter } from "vue-router";
 import { useAdminStore } from "@/stores/admin";
 import { computed } from "vue";
 const router = useRouter();
-console.log(router, "router");
+// console.log(router, "router");
 const iconUrl = new URL("@/assets/images/机器人.png", import.meta.url).href;
 const selectMenu = (key) => {
-  console.log(key, "key");
+  // console.log(key, "key");
   const currentRoute = router.options.routes[0];
   router.push(`${currentRoute.path}/${key.index}`);
 };

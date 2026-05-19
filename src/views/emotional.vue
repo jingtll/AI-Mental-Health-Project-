@@ -117,7 +117,7 @@ const viewSessionDetail = (row) => {
   currentDetail.value = row;
   if (row.aiEmotionAnalysis) {
     aiData.value = JSON.parse(row.aiEmotionAnalysis);
-    console.log(aiData.value);
+    // console.log(aiData.value);
   } else {
     aiData.value = {};
   }

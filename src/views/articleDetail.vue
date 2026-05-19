@@ -21,7 +21,7 @@ const formatContent = (content) => {
 };
 onMounted(() => {
   getKnowledgeDetail(props.id).then((res) => {
-    console.log(res);
+    // console.log(res);
     articleDetail.value = res;
   });
 });

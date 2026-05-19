@@ -102,12 +102,12 @@ const commonTags = [
 const imgUrl = ref("");
 const beforeUpload = (file) => {
   //针对上传的文件进行校验
-  console.log(file, "上传文件");
+  // console.log(file, "上传文件");
   const isImage = file.type.startsWith("image/");
   const isLt5M = file.size / 1024 / 1024 < 5;
 
   if (!isImage) {
-    ElMessage.error("上传封面涂片，请选择图片文件");
+    ElMessage.error("上传封面图片，请选择图片文件");
     return false; // 阻止默认的上传行为
   }
   if (!isLt5M) {
@@ -121,7 +121,7 @@ const handleUploadRequest = async ({ file }) => {
   //UUID生成唯一文件名
   businessID.value = crypto.randomUUID();
   const fileRes = await uploadFile(file, { businessID: businessID.value });
-  console.log(fileRes);
+  // console.log(fileRes);
 
   //拼接完整图片地址
   imgUrl.value = `${fileBaseUrl}${fileRes.filePath}`;
@@ -133,7 +133,7 @@ const handleRemove = () => {
 };
 //富文本
 const handleContentChange = (data) => {
-  console.log(data);
+  // console.log(data);
   formData.content = data.html;
 };
 const editorInstance = ref(null);
@@ -156,7 +156,7 @@ const handleSubmit = () => {
     if (valid) {
       loading.value = true;
     }
-    console.log(formData);
+    // console.log(formData);
     const submitData = {
       ...formData,
       tags: formData.tagArray.join(","),

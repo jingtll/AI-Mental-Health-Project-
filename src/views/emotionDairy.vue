@@ -76,7 +76,7 @@ const resetForm = () => {
   });
 };
 const submitForm = () => {
-  console.log(diaryForm);
+  // console.log(diaryForm);
   if (!diaryForm.moodScore) {
     ElMessage.error("请选择您的情绪评分");
     return;

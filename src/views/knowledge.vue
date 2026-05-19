@@ -52,7 +52,7 @@ const pagination = reactive({
   total: 0,
 });
 const handleSearch = async (formData) => {
-  console.log(formData, "查询参数");
+  // console.log(formData, "查询参数");
 
   const params = {
     ...pagination,
@@ -74,7 +74,7 @@ const categories = ref([]);
 const tableData = ref([]);
 onMounted(async () => {
   const data = await categoryTree();
-  console.log(data, "分类树");
+  // console.log(data, "分类树");
   categories.value = data.map((item) => {
     categoryMaps[item.id] = item.categoryName;
     return {
@@ -100,7 +100,7 @@ const handleEdit = (row) => {
   } else {
     //编辑
     getArticleDetail(row.id).then((res) => {
-      console.log(res, "文章详情");
+      // console.log(res, "文章详情");
       currentArticle.value = res;
       dialogVisible.value = true;
     });

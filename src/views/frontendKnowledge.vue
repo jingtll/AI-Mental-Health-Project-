@@ -51,7 +51,7 @@ onMounted(() => {
   };
   getPageList();
   getKnowledgeList(params).then((res) => {
-    console.log(res);
+    // console.log(res);
     recommendList.value = res.records;
   });
 });
@@ -62,7 +62,7 @@ onMounted(() => {
     <div class="header-section">
       <div class="header-content">
         <el-image :src="iconUrl" style="width: 60px; height: 60px"></el-image>
-        <h1>情绪日志</h1>
+        <h1>知识库</h1>
       </div>
     </div>
     <div class="content">

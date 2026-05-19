@@ -28,7 +28,7 @@ const submitForm = async (formEl) => {
   if (!formEl) return;
   formEl.validate(async (valid) => {
     register(formData).then(({ data }) => {
-      console.log(data);
+      // console.log(data);
       if (!data) {
         ElMessage.success("注册成功");
         router.push("/auth/login");
@@ -100,6 +100,7 @@ const submitForm = async (formEl) => {
             placeholder="请再次输入密码"
             type="password"
             show-password
+            @keydown.enter="submitForm(submitFormRef)"
           />
         </el-form-item>
         <el-form-item>

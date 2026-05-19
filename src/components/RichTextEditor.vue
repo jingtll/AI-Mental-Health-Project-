@@ -183,23 +183,23 @@ const handleEditorCreated = (editor) => {
   updateCharCount()
   
   // 调试信息 - 检查字体配置
-  console.log('编辑器实例:', editor)
-  console.log('工具栏配置:', editor.getConfig())
-  
+  // console.log('编辑器实例:', editor)
+  // console.log('工具栏配置:', editor.getConfig())
+
   // 检查字体菜单
   const menus = editor.getAllMenuKeys()
-  console.log('所有可用菜单:', menus)
-  
+  // console.log('所有可用菜单:', menus)
+
   if (menus.includes('fontFamily')) {
-    console.log('字体菜单已启用')
+    // console.log('字体菜单已启用')
   } else {
     console.warn('字体菜单未启用')
   }
-  
+
   // 触发创建事件
   emit('created', editor)
-  
-  console.log('富文本编辑器已创建')
+
+  // console.log('富文本编辑器已创建')
 }
 
 const handleEditorChange = (editor) => {
@@ -214,7 +214,7 @@ const handleEditorChange = (editor) => {
 
 const handleEditorDestroyed = () => {
   editorRef.value = null
-  console.log('富文本编辑器已销毁')
+  // console.log('富文本编辑器已销毁')
 }
 
 const updateCharCount = () => {

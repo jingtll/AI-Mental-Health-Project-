@@ -10,7 +10,7 @@ const handleCollapse = () => {
 };
 
 const handleCommand = (command) => {
-  console.log(command, "command");
+  // console.log(command, "command");
   if (command === "logout") {
     // 退出登录逻辑
     ElMessageBox.confirm("确定退出登录吗？", "提示", {
