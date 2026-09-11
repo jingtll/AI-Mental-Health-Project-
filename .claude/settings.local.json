@@ -14,7 +14,8 @@
       "WebSearch",
       "Bash(npm search *)",
       "Bash(claude mcp *)",
-      "Bash(npm info *)"
+      "Bash(npm info *)",
+      "mcp__filesystem__directory_tree"
     ]
   }
 }
