@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 const iconUrl = new URL("@/assets/images/robot-fill.png", import.meta.url).href;
 </script>
 

@@ -34,71 +34,66 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, reactive, computed, onBeforeUnmount, shallowRef, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import '@wangeditor/editor/dist/css/style.css'
 import { Editor as WangEditor, Toolbar as WangToolbar } from '@wangeditor/editor-for-vue'
+import type { IDomEditor, IEditorConfig, IToolbarConfig } from '@wangeditor/editor'
 
-// Props
-const props = defineProps({
-  modelValue: {
-    type: String,
-    default: ''
-  },
-  placeholder: {
-    type: String,
-    default: '请输入内容...'
-  },
-  maxCharCount: {
-    type: Number,
-    default: 2000
-  },
-  showWordCount: {
-    type: Boolean,
-    default: true
-  },
-  showSecurityTip: {
-    type: Boolean,
-    default: true
-  },
-  toolbarKeys: {
-    type: Array,
-    default: () => [
+type EditorInstance = IDomEditor
+
+const props = withDefaults(
+  defineProps<{
+    modelValue?: string
+    placeholder?: string
+    maxCharCount?: number
+    showWordCount?: boolean
+    showSecurityTip?: boolean
+    toolbarKeys?: string[]
+    minHeight?: string
+  }>(),
+  {
+    modelValue: '',
+    placeholder: '请输入内容...',
+    maxCharCount: 2000,
+    showWordCount: true,
+    showSecurityTip: true,
+    toolbarKeys: () => [
       'bold', 'italic', 'underline', 'color', 'bgColor', '|',
       'fontSize', 'fontFamily', '|',
       'header1', 'header2', 'header3', '|',
       'bulletedList', 'numberedList', 'blockquote', '|',
       'insertLink', '|',
       'undo', 'redo'
-    ]
-  },
-  minHeight: {
-    type: String,
-    default: '300px'
+    ],
+    minHeight: '300px'
   }
-})
+)
 
-// Emits
-const emit = defineEmits(['update:modelValue', 'change', 'created'])
+const emit = defineEmits<{
+  'update:modelValue': [value: string]
+  change: [payload: { html: string; text: string }]
+  created: [editor: EditorInstance]
+}>()
 
 // 响应式数据
-const editorRef = shallowRef(null)
+const editorRef = shallowRef<EditorInstance | null>(null)
 const currentCharCount = ref(0)
 
 // 计算属性
 const content = computed({
   get: () => props.modelValue,
-  set: (value) => emit('update:modelValue', value)
+  set: (value: string) => emit('update:modelValue', value)
 })
 
 // 编辑器配置
-const editorConfig = reactive({
+const editorConfig = reactive<Partial<IEditorConfig>>({
   placeholder: props.placeholder,
   MENU_CONF: {
     fontSize: {
       fontSizeList: [
-        '12px', '13px', '14px', '15px', '16px', '17px', '18px', 
+        '12px', '13px', '14px', '15px', '16px', '17px', '18px',
         '19px', '20px', '22px', '24px', '26px', '28px', '30px', '32px', '36px'
       ]
     },
@@ -167,44 +162,35 @@ const editorConfig = reactive({
     lineHeight: {
       lineHeightList: ['1', '1.15', '1.2', '1.5', '1.75', '2', '2.5', '3']
     }
-  }
+  } as IEditorConfig['MENU_CONF']
 })
 
 // 工具栏配置
-const toolbarConfig = reactive({
+const toolbarConfig = reactive<Partial<IToolbarConfig>>({
   toolbarKeys: props.toolbarKeys
 })
 
 // 方法
-const handleEditorCreated = (editor) => {
+const handleEditorCreated = (editor: EditorInstance) => {
   editorRef.value = editor
-  
+
   // 初始化字数统计
   updateCharCount()
-  
-  // 调试信息 - 检查字体配置
-  // console.log('编辑器实例:', editor)
-  // console.log('工具栏配置:', editor.getConfig())
 
   // 检查字体菜单
   const menus = editor.getAllMenuKeys()
-  // console.log('所有可用菜单:', menus)
 
-  if (menus.includes('fontFamily')) {
-    // console.log('字体菜单已启用')
-  } else {
+  if (!menus.includes('fontFamily')) {
     console.warn('字体菜单未启用')
   }
 
   // 触发创建事件
   emit('created', editor)
-
-  // console.log('富文本编辑器已创建')
 }
 
-const handleEditorChange = (editor) => {
+const handleEditorChange = (editor: EditorInstance) => {
   updateCharCount()
-  
+
   // 触发变更事件
   emit('change', {
     html: editor.getHtml(),
@@ -214,16 +200,15 @@ const handleEditorChange = (editor) => {
 
 const handleEditorDestroyed = () => {
   editorRef.value = null
-  // console.log('富文本编辑器已销毁')
 }
 
 const updateCharCount = () => {
   if (!editorRef.value) return
-  
+
   const text = editorRef.value.getText()
   const cleanText = text.replace(/\s+/g, ' ').trim()
   currentCharCount.value = cleanText === '' ? 0 : cleanText.length
-  
+
   // 检查字数限制
   if (currentCharCount.value > props.maxCharCount) {
     ElMessage.warning(`内容长度不能超过 ${props.maxCharCount} 字符`)
@@ -239,28 +224,20 @@ const getText = () => {
   return editorRef.value ? editorRef.value.getText() : ''
 }
 
-const setHtml = (html) => {
-  if (editorRef.value) {
-    editorRef.value.setHtml(html)
-  }
+const setHtml = (html: string) => {
+  editorRef.value?.setHtml(html)
 }
 
 const clear = () => {
-  if (editorRef.value) {
-    editorRef.value.clear()
-  }
+  editorRef.value?.clear()
 }
 
-const insertText = (text) => {
-  if (editorRef.value) {
-    editorRef.value.insertText(text)
-  }
+const insertText = (text: string) => {
+  editorRef.value?.insertText(text)
 }
 
 const focus = () => {
-  if (editorRef.value) {
-    editorRef.value.focus()
-  }
+  editorRef.value?.focus()
 }
 
 // 暴露方法给父组件

@@ -1,17 +1,25 @@
-<script setup>
-import { ElAside } from "element-plus";
+<script setup lang="ts">
 import { useRouter } from "vue-router";
 import { useAdminStore } from "@/stores/admin";
 import { computed } from "vue";
 const router = useRouter();
-// console.log(router, "router");
 const iconUrl = new URL("@/assets/images/机器人.png", import.meta.url).href;
-const selectMenu = (key) => {
-  // console.log(key, "key");
+
+type MenuSelectPayload = { index: string };
+
+const selectMenu = (key: MenuSelectPayload) => {
   const currentRoute = router.options.routes[0];
   router.push(`${currentRoute.path}/${key.index}`);
 };
 const isCollapse = computed(() => useAdminStore().isCollapse);
+
+const backendChildren = computed(() => {
+  const route = router.options.routes[0];
+  return (route.children ?? []) as Array<{
+    path: string;
+    meta?: { title?: string; icon?: string };
+  }>;
+});
 </script>
 
 <template>
@@ -35,12 +43,12 @@ const isCollapse = computed(() => useAdminStore().isCollapse);
       </div>
       <el-menu-item
         @click="selectMenu"
-        v-for="item in router.options.routes[0].children"
+        v-for="item in backendChildren"
         :key="item.path"
         :index="item.path"
       >
-        <el-icon><component :is="item.meta.icon" /></el-icon>
-        <span>{{ item.meta.title }}</span>
+        <el-icon><component :is="item.meta?.icon" /></el-icon>
+        <span>{{ item.meta?.title }}</span>
       </el-menu-item>
     </el-menu>
   </el-aside>

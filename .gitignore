@@ -1,24 +1,80 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build output
+dist/
+dist-ssr/
+build/
+*.tsbuildinfo
+
 # Logs
-logs
+logs/
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
+pnpm-lock.yaml
 
-node_modules
-dist
-dist-ssr
+# Local env / secrets（勿提交真实密钥）
+.env
+.env.*
+!.env.example
 *.local
+*.pem
+*.key
 
-# Editor directories and files
+# Test / coverage
+coverage/
+*.lcov
+.nyc_output/
+.vitest/
+playwright-report/
+test-results/
+
+# Editor / IDE
 .vscode/*
 !.vscode/extensions.json
-.idea
-.DS_Store
+.idea/
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+ehthumbs.db
+
+# Vite / tooling cache
+.vite/
+.eslintcache
+.stylelintcache
+*.cache
+
+# Agent / AI 本地工作区（非项目源码）
+.claude/
+tasks/
+.cursor/
+.opencode/
+.codex/
+.agents/
+
+# 临时产物
+tmp/
+temp/
+*.tmp
+*.bak
+*.orig
+*.rej

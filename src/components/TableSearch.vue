@@ -1,38 +1,55 @@
-<script setup>
+<script setup lang="ts">
 import { ref, reactive, computed } from "vue";
-const props = defineProps({
-  formItem: {
-    type: Array,
-    default: () => [],
-  },
-});
-const emit = defineEmits(["search"]);
-//表单数据
-const formData = reactive({});
+import type { FormInstance } from "element-plus";
 
-const isComp = (comp) => {
-  return { input: "el-input", select: "el-select" }[comp];
+export interface SearchFormOption {
+  label: string;
+  value: string | number;
+}
+
+export interface SearchFormItem {
+  comp: "input" | "select";
+  prop: string;
+  label: string;
+  placeholder?: string;
+  options?: SearchFormOption[];
+  col?: Record<string, number>;
+}
+
+const props = withDefaults(
+  defineProps<{
+    formItem?: SearchFormItem[];
+  }>(),
+  {
+    formItem: () => [],
+  },
+);
+
+const emit = defineEmits<{
+  search: [payload: Record<string, unknown>];
+}>();
+
+const formData = reactive<Record<string, unknown>>({});
+
+const isComp = (comp: SearchFormItem["comp"]) => {
+  const map = { input: "el-input", select: "el-select" } as const;
+  return map[comp];
 };
 const handleSearch = () => {
-  // console.log(formData);
   emit("search", formData);
 };
-const handleReset = (formEl) => {
-  // 如果没有传入表单实例 → 直接退出，避免代码报错
+const handleReset = (formEl: FormInstance | undefined) => {
   if (!formEl) return;
-  // 调用 Element Plus 表单自带的方法：重置所有表单项
   formEl.resetFields();
-  //核心业务逻辑：重置后，自动触发搜索，把清空后的表单数据传给父组件
   emit("search", formData);
 };
 const formItemAttrs = computed(() => {
-  const { formItem } = props;
-  formItem.forEach((item) => {
-    item.col = { xs: 24, sm: 12, md: 8, lg: 6, xl: 6 };
-  });
-  return formItem;
+  return props.formItem.map((item) => ({
+    ...item,
+    col: { xs: 24, sm: 12, md: 8, lg: 6, xl: 6 },
+  }));
 });
-const ruleFormRef = ref();
+const ruleFormRef = ref<FormInstance>();
 </script>
 
 <template>

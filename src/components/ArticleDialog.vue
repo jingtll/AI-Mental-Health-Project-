@@ -1,64 +1,73 @@
-<script setup>
+<script setup lang="ts">
 import { ElMessage } from "element-plus";
+import type { FormInstance, FormRules, UploadRequestOptions } from "element-plus";
 import { ref, reactive, computed, nextTick, watch } from "vue";
 import { uploadFile, createArticle, updateArticle } from "@/api/admin";
 import { fileBaseUrl } from "@/config/index";
 import RichEditor from "@/components/RichTextEditor.vue";
-const handleClose = () => {
-  //重置表单
-  formRef.value.resetFields();
-  //重置ID
-  businessID.value = null;
-  //重置封面图片和数据
-  handleRemove();
-  //重置标签
-  formData.tagArray = [];
-  emit("update:modelValue", false);
-};
-const props = defineProps({
-  visible: {
-    type: {
-      Boolean,
-      default: false,
-    },
+
+interface CategoryOption {
+  label: string;
+  value: number;
+}
+
+interface ArticleDetail {
+  id: number | string;
+  title?: string;
+  content?: string;
+  coverImage?: string;
+  categoryId?: number;
+  summary?: string;
+  tags?: string;
+  [key: string]: unknown;
+}
+
+interface ArticleForm {
+  title: string;
+  content: string;
+  coverImage: string;
+  categoryId: number;
+  summary: string;
+  tagArray: string[];
+  tags: string;
+  id: string | number;
+}
+
+const props = withDefaults(
+  defineProps<{
+    modelValue?: boolean;
+    categories?: CategoryOption[];
+    article?: ArticleDetail | null;
+  }>(),
+  {
+    modelValue: false,
+    categories: () => [],
+    article: null,
   },
-  categories: {
-    type: Array,
-    default: () => [],
-  },
-  article: {
-    type: Object,
-    default: null,
-  },
-});
+);
+
+const emit = defineEmits<{
+  "update:modelValue": [value: boolean];
+  success: [];
+}>();
+
+const formRef = ref<FormInstance>();
+const businessID = ref<string | number | null>(null);
+const imgUrl = ref("");
+const editorInstance = ref<{ setHtml?: (html: string) => void } | null>(null);
+const btnPreview = ref(false);
+const loading = ref(false);
 
 const dialogVisible = computed({
-  get() {
-    return props.modelValue;
-  },
-  set(val) {
+  get: () => props.modelValue,
+  set: (val: boolean) => {
     emit("update:modelValue", val);
   },
 });
+
 const isEdit = computed(() => !!props.article?.id);
-//监听编辑数据
-watch(
-  () => props.article, //指定要监听的数据 → 父组件通过 props 传递过来的 article（文章对象）；监听对象类型的响应式数据时，必须用箭头函数
-  (newVal) => {
-    if (newVal) {
-      nextTick(() => {
-        Object.assign(formData, newVal);
-        //使用现有ID
-        businessID.value = newVal.id;
-        //设置封面图片地址
-        imgUrl.value = fileBaseUrl + newVal.coverImage;
-      });
-    }
-  },
-);
-const emit = defineEmits(["update:modelValue", "success"]);
-//表单数据
-const formData = reactive({
+
+const formData = reactive<ArticleForm>({
   title: "",
   content: "",
   coverImage: "",
@@ -68,12 +77,12 @@ const formData = reactive({
   tags: "",
   id: "",
 });
-const rules = reactive({
+
+const rules = reactive<FormRules>({
   title: [
     { required: true, message: "请输入文章标题", trigger: "blur" },
     { max: 200, message: "文章标题最多200个字符", trigger: "blur" },
   ],
-
   categoryId: [
     { required: true, message: "请选择文章分类", trigger: "change" },
   ],
@@ -82,6 +91,7 @@ const rules = reactive({
     { max: 5000, message: "文章内容最多5000个字符", trigger: "blur" },
   ],
 });
+
 const commonTags = [
   "情绪管理",
   "焦虑",
@@ -98,66 +108,84 @@ const commonTags = [
   "学习方法",
   "生活技巧",
 ];
-//上传
-const imgUrl = ref("");
-const beforeUpload = (file) => {
-  //针对上传的文件进行校验
-  // console.log(file, "上传文件");
-  const isImage = file.type.startsWith("image/");
-  const isLt5M = file.size / 1024 / 1024 < 5;
 
-  if (!isImage) {
-    ElMessage.error("上传封面图片，请选择图片文件");
-    return false; // 阻止默认的上传行为
-  }
-  if (!isLt5M) {
-    ElMessage.error("上传封面图片大小不能超过 5MB");
-    return false; // 阻止默认的上传行为
-  }
-  return true; // 允许上传
-};
-const businessID = ref(null);
-const handleUploadRequest = async ({ file }) => {
-  //UUID生成唯一文件名
-  businessID.value = crypto.randomUUID();
-  const fileRes = await uploadFile(file, { businessID: businessID.value });
-  // console.log(fileRes);
-
-  //拼接完整图片地址
-  imgUrl.value = `${fileBaseUrl}${fileRes.filePath}`;
-  formData.coverImage = fileRes.filePath;
-};
 const handleRemove = () => {
   imgUrl.value = "";
   formData.coverImage = "";
 };
-//富文本
-const handleContentChange = (data) => {
-  // console.log(data);
-  formData.content = data.html;
-};
-const editorInstance = ref(null);
-const handleEditorCreated = (editor) => {
-  editorInstance.value = editor;
 
-  //编辑时，设置富文本内容为已有的内容
-  if (formData.content && editor) {
+const handleClose = () => {
+  formRef.value?.resetFields();
+  businessID.value = null;
+  handleRemove();
+  formData.tagArray = [];
+  emit("update:modelValue", false);
+};
+
+watch(
+  () => props.article,
+  (newVal) => {
+    if (newVal) {
+      nextTick(() => {
+        Object.assign(formData, {
+          title: newVal.title ?? "",
+          content: newVal.content ?? "",
+          coverImage: newVal.coverImage ?? "",
+          categoryId: newVal.categoryId ?? 1,
+          summary: newVal.summary ?? "",
+          tags: newVal.tags ?? "",
+          id: newVal.id,
+        });
+        businessID.value = newVal.id;
+        imgUrl.value = fileBaseUrl + (newVal.coverImage ?? "");
+      });
+    }
+  },
+);
+
+const beforeUpload = (file: File) => {
+  const isImage = file.type.startsWith("image/");
+  const isLt5M = file.size / 1024 / 1024 < 5;
+  if (!isImage) {
+    ElMessage.error("上传封面图片，请选择图片文件");
+    return false;
+  }
+  if (!isLt5M) {
+    ElMessage.error("上传封面图片大小不能超过 5MB");
+    return false;
+  }
+  return true;
+};
+
+const handleUploadRequest = async (options: UploadRequestOptions) => {
+  businessID.value = crypto.randomUUID();
+  const fileRes = await uploadFile(options.file as File, {
+    businessId: businessID.value,
+  });
+  imgUrl.value = `${fileBaseUrl}${fileRes.filePath}`;
+  formData.coverImage = fileRes.filePath;
+};
+
+const handleContentChange = (data: { html?: string; text?: string }) => {
+  if (data.html != null) {
+    formData.content = data.html;
+  }
+};
+
+const handleEditorCreated = (editor: { setHtml?: (html: string) => void }) => {
+  editorInstance.value = editor;
+  if (formData.content && editor?.setHtml) {
     nextTick(() => {
-      editor.setHtml(formData.content);
+      editor.setHtml?.(formData.content);
     });
   }
 };
-const btnPreview = ref(false);
-//提交
-const formRef = ref();
-const loading = ref(false);
+
 const handleSubmit = () => {
-  formRef.value.validate((valid, fields) => {
-    if (valid) {
-      loading.value = true;
-    }
-    // console.log(formData);
-    const submitData = {
+  formRef.value?.validate((valid) => {
+    if (!valid) return;
+    loading.value = true;
+    const submitData: Record<string, unknown> = {
       ...formData,
       tags: formData.tagArray.join(","),
     };
@@ -165,15 +193,17 @@ const handleSubmit = () => {
 
     if (!isEdit.value) {
       submitData.id = businessID.value;
-      createArticle(submitData).then((res) => {
+      createArticle(submitData).then(() => {
+        loading.value = false;
+        emit("success");
+      });
+    } else if (props.article?.id != null) {
+      updateArticle(props.article.id, submitData).then(() => {
         loading.value = false;
         emit("success");
       });
     } else {
-      updateArticle(props.article.id, submitData).then((res) => {
-        loading.value = false;
-        emit("success");
-      });
+      loading.value = false;
     }
   });
 };

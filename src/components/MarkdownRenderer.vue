@@ -4,19 +4,18 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed } from 'vue'
 
-const props = defineProps({
-  content: {
-    type: String,
-    required: true
+const props = withDefaults(
+  defineProps<{
+    content: string
+    isAiMessage?: boolean
+  }>(),
+  {
+    isAiMessage: false,
   },
-  isAiMessage: {
-    type: Boolean,
-    default: false
-  }
-})
+)
 
 // 简单的Markdown渲染器
 const renderedContent = computed(() => {
@@ -26,7 +25,7 @@ const renderedContent = computed(() => {
   html = html.replace(/</g, '&lt;').replace(/>/g, '&gt;')
 
   // 处理代码块（```）
-  html = html.replace(/```(\w+)?\n([\s\S]*?)\n```/g, (match, lang, code) => {
+  html = html.replace(/```(\w+)?\n([\s\S]*?)\n```/g, (_match: string, lang: string, code: string) => {
     return `<pre class="code-block"><code class="language-${lang || 'text'}">${code.trim()}</code></pre>`
   })
 

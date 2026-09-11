@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { useAdminStore } from "@/stores/admin";
 import { useRoute, useRouter } from "vue-router";
 import { ElMessageBox } from "element-plus";
@@ -9,20 +9,17 @@ const handleCollapse = () => {
   useAdminStore().toggleCollapse();
 };
 
-const handleCommand = (command) => {
-  // console.log(command, "command");
+const handleCommand = (command: string | number | object) => {
   if (command === "logout") {
-    // 退出登录逻辑
     ElMessageBox.confirm("确定退出登录吗？", "提示", {
       confirmButtonText: "确定",
       cancelButtonText: "取消",
       type: "warning",
     }).then(() => {
       logout().then(() => {
-        //清除缓存
+        // 保留原 key 大小写 userinfo（历史行为）
         localStorage.removeItem("token");
         localStorage.removeItem("userinfo");
-        //跳转登录页
         router.push("/auth/login");
       });
     });

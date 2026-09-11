@@ -1,4 +1,4 @@
-import service from "@/utils/request"
+import http from "@/utils/request"
 import type { PageQuery, PageResult } from "@/types/api"
 import type {
   ChatMessage,
@@ -8,46 +8,46 @@ import type {
 import type { EmotionDiaryPayload, SessionEmotion } from "@/types/emotion"
 
 export const register = (data: Record<string, unknown>) => {
-  return service.post<string | null>("/user/add", data)
+  return http.post<string | null>("/user/add", data)
 }
 
 export const startSession = (data: StartSessionPayload) => {
-  return service.post<ChatSession>("/psychological-chat/session/start", data)
+  return http.post<ChatSession>("/psychological-chat/session/start", data)
 }
 
 export const getSessionList = (params: PageQuery) => {
-  return service.get<PageResult<ChatSession>>("/psychological-chat/sessions", {
+  return http.get<PageResult<ChatSession>>("/psychological-chat/sessions", {
     params,
   })
 }
 
 export const deleteSession = (sessionId: number | string) => {
-  return service.delete<null>(`/psychological-chat/sessions/${sessionId}`)
+  return http.delete<null>(`/psychological-chat/sessions/${sessionId}`)
 }
 
 export const getSessionDetail = (sessionId: number | string) => {
-  return service.get<ChatMessage[]>(
+  return http.get<ChatMessage[]>(
     `/psychological-chat/sessions/${sessionId}/messages`,
   )
 }
 
 export const getSessionEmotion = (sessionId: number | string) => {
-  return service.get<SessionEmotion>(
+  return http.get<SessionEmotion>(
     `/psychological-chat/session/${sessionId}/emotion`,
   )
 }
 
 export const addEmotionDiary = (data: EmotionDiaryPayload) => {
-  return service.post<null>("/emotion-diary", data)
+  return http.post<null>("/emotion-diary", data)
 }
 
 export const getKnowledgeList = (params: PageQuery) => {
-  return service.get<PageResult<Record<string, unknown>>>(
+  return http.get<PageResult<Record<string, unknown>>>(
     "/knowledge/article/page",
     { params },
   )
 }
 
 export const getKnowledgeDetail = (id: number | string) => {
-  return service.get<Record<string, unknown>>(`/knowledge/article/${id}`)
+  return http.get<Record<string, unknown>>(`/knowledge/article/${id}`)
 }
