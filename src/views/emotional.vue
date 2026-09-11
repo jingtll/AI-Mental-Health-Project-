@@ -1,12 +1,35 @@
-<script setup>
+<script setup lang="ts">
 import { ref, reactive, onMounted } from "vue";
 import PageHead from "@/components/PageHead.vue";
 import TableSearch from "@/components/TableSearch.vue";
+import type { SearchFormItem } from "@/components/TableSearch.vue";
 import { getEmotionalPage, deleteEmotional } from "@/api/admin";
-import { ElMessageBox } from "element-plus";
+import { ElMessageBox, ElMessage } from "element-plus";
+
+interface EmotionalRow {
+  id: number | string;
+  nickname?: string;
+  username?: string;
+  userId?: number | string;
+  diaryDate?: string;
+  moodScore?: number;
+  sleep?: number;
+  sleepQuality?: number;
+  stressLevel?: number;
+  dominantEmotion?: string;
+  emotionTriggers?: string;
+  diaryContent?: string;
+  aiEmotionAnalysis?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  [key: string]: unknown;
+}
+
+type EpTagType = "primary" | "success" | "warning" | "info" | "danger";
+
 //情绪映射
-const getEmotionTagType = (emotion) => {
-  const emotionTypes = {
+const getEmotionTagType = (emotion?: string): EpTagType => {
+  const emotionTypes: Record<string, EpTagType> = {
     快乐: "success",
     平静: "info",
     兴奋: "warning",
@@ -14,11 +37,11 @@ const getEmotionTagType = (emotion) => {
     悲伤: "info",
     焦虑: "warning",
   };
-  return emotionTypes[emotion] || "info";
+  return (emotion && emotionTypes[emotion]) || "info";
 };
 
-const getAiEmotionTagType = (emotion) => {
-  const emotionTagMap = {
+const getAiEmotionTagType = (emotion?: string): EpTagType => {
+  const emotionTagMap: Record<string, EpTagType> = {
     快乐: "success",
     平静: "success",
     兴奋: "warning",
@@ -30,18 +53,18 @@ const getAiEmotionTagType = (emotion) => {
     沮丧: "info",
     压力: "warning",
   };
-  return emotionTagMap[emotion] || "info";
+  return (emotion && emotionTagMap[emotion]) || "info";
 };
 
-const getEmotionScoreColor = (score) => {
+const getEmotionScoreColor = (score: number) => {
   if (score >= 80) return "#f56c6c";
   if (score >= 60) return "#e6a23c";
   if (score >= 40) return "#909399";
   return "#67c23a";
 };
 
-const getRiskLevelTagType = (riskLevel) => {
-  const riskTagMap = {
+const getRiskLevelTagType = (riskLevel: number | string): EpTagType => {
+  const riskTagMap: Record<string, EpTagType> = {
     0: "success",
     1: "info",
     2: "warning",
@@ -50,8 +73,8 @@ const getRiskLevelTagType = (riskLevel) => {
   return riskTagMap[riskLevel] || "info";
 };
 
-const getRiskLevelText = (riskLevel) => {
-  const riskTextMap = {
+const getRiskLevelText = (riskLevel: number | string) => {
+  const riskTextMap: Record<string, string> = {
     0: "正常",
     1: "关注",
     2: "预警",
@@ -59,7 +82,8 @@ const getRiskLevelText = (riskLevel) => {
   };
   return riskTextMap[riskLevel] || "未知风险等级";
 };
-const formItem = [
+
+const formItem = ref<SearchFormItem[]>([
   {
     comp: "input",
     prop: "userId",
@@ -72,52 +96,53 @@ const formItem = [
     label: "情绪评分",
     placeholder: "请选择评分范围",
     options: [
-      {
-        label: "低分（1-3）",
-        value: "1-3",
-      },
-      {
-        label: "中分（4-6）",
-        value: "4-6",
-      },
-      {
-        label: "高分（7-10）",
-        value: "7-10",
-      },
+      { label: "低分（1-3）", value: "1-3" },
+      { label: "中分（4-6）", value: "4-6" },
+      { label: "高分（7-10）", value: "7-10" },
     ],
   },
-];
+]);
+
 //列表
-const tableData = ref([]);
+const tableData = ref<EmotionalRow[]>([]);
 //分页参数
 const pagination = reactive({
   currentPage: 1,
   size: 10,
   total: 0,
 });
-const handleSearch = async (formData) => {
+
+const handleSearch = async (formData?: Record<string, unknown>) => {
   const params = {
     ...pagination,
-    ...formData,
+    ...(formData || {}),
   };
   const { records, total } = await getEmotionalPage(params);
-  tableData.value = records;
+  tableData.value = records as EmotionalRow[];
   pagination.total = total;
 };
-const handleChange = (page) => {
+
+const handleChange = (page: number) => {
   pagination.currentPage = page;
   handleSearch();
 };
 
 //详情
 const detailDialogVisible = ref(false);
-const currentDetail = ref(null);
-const aiData = ref(null);
-const viewSessionDetail = (row) => {
+const currentDetail = ref<EmotionalRow | null>(null);
+const aiData = ref<Record<string, unknown> | null>(null);
+
+const viewSessionDetail = (row: EmotionalRow) => {
   currentDetail.value = row;
   if (row.aiEmotionAnalysis) {
-    aiData.value = JSON.parse(row.aiEmotionAnalysis);
-    // console.log(aiData.value);
+    try {
+      aiData.value = JSON.parse(row.aiEmotionAnalysis) as Record<
+        string,
+        unknown
+      >;
+    } catch {
+      aiData.value = {};
+    }
   } else {
     aiData.value = {};
   }
@@ -125,11 +150,11 @@ const viewSessionDetail = (row) => {
 };
 
 //删除
-const handleDelete = (row) => {
+const handleDelete = (row: EmotionalRow) => {
   ElMessageBox.confirm("确认删除该条记录吗？", "删除确认", {
     confirmButtonText: "确定",
     cancelButtonText: "取消",
-    type: "danger",
+    type: "error",
   }).then(() => {
     // 确认删除
     deleteEmotional(row.id).then(() => {
@@ -138,6 +163,7 @@ const handleDelete = (row) => {
     });
   });
 };
+
 onMounted(() => {
   handleSearch();
 });
@@ -256,49 +282,56 @@ onMounted(() => {
           <div class="ai-analysis-result">
             <el-descriptions :column="2" border>
               <el-descriptions-item label="主要情绪">
-                <el-tag :type="getAiEmotionTagType(aiData.primaryEmotion)">
-                  {{ aiData.primaryEmotion || "-" }}
+                <el-tag
+                  :type="getAiEmotionTagType(String(aiData?.primaryEmotion || ''))"
+                >
+                  {{ aiData?.primaryEmotion || "-" }}
                 </el-tag>
               </el-descriptions-item>
               <el-descriptions-item label="情绪强度">
                 <el-progress
-                  :percentage="Number(aiData.emotionScore || 0)"
+                  :percentage="Number(aiData?.emotionScore || 0)"
                   :color="
-                    getEmotionScoreColor(Number(aiData.emotionScore || 0))
+                    getEmotionScoreColor(Number(aiData?.emotionScore || 0))
                   "
                   :stroke-width="8"
                 />
               </el-descriptions-item>
               <el-descriptions-item label="风险等级">
-                <el-tag :type="getRiskLevelTagType(aiData.riskLevel)">
-                  {{ getRiskLevelText(aiData.riskLevel) }}
+                <el-tag
+                  :type="getRiskLevelTagType(Number(aiData?.riskLevel ?? 0))"
+                >
+                  {{ getRiskLevelText(Number(aiData?.riskLevel ?? 0)) }}
                 </el-tag>
               </el-descriptions-item>
               <el-descriptions-item label="情绪性质">
-                <el-tag :type="aiData.isNegative ? 'danger' : 'success'">
-                  {{ aiData.isNegative ? "负面情绪" : "正面情绪" }}
+                <el-tag :type="aiData?.isNegative ? 'danger' : 'success'">
+                  {{ aiData?.isNegative ? "负面情绪" : "正面情绪" }}
                 </el-tag>
               </el-descriptions-item>
             </el-descriptions>
             <div class="ai-suggestion-section">
               <h5>专业建议</h5>
               <div class="suggestion-content">
-                {{ aiData.suggestion || "无" }}
+                {{ aiData?.suggestion || "无" }}
               </div>
             </div>
             <div class="ai-risk-section">
               <h5>风险描述</h5>
               <div class="risk-content">
-                {{ aiData.riskDescription || "无" }}
+                {{ aiData?.riskDescription || "无" }}
               </div>
             </div>
             <div class="ai-improvements-section">
               <h5>改善建议</h5>
               <ul
                 class="improvement-list"
-                v-if="aiData.improvementSuggestions?.length"
+                v-if="(aiData?.improvementSuggestions as string[] | undefined)?.length"
               >
-                <li v-for="item in aiData.improvementSuggestions" :key="item">
+                <li
+                  v-for="item in (aiData?.improvementSuggestions as string[])"
+                  :key="item"
+                >
                   {{ item }}
                 </li>
               </ul>

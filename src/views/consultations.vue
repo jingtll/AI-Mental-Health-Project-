@@ -1,17 +1,31 @@
-<script setup>
+<script setup lang="ts">
 import PageHead from "@/components/PageHead.vue";
 import { ref, onMounted, reactive } from "vue";
 import { getConsultationPage, getSessionDetail } from "@/api/admin";
-const tableData = ref([]);
+import type { ChatMessage, ChatSession } from "@/types/session";
+
+interface ConsultationRow extends ChatSession {
+  userNickname?: string;
+  lastMessageContent?: string;
+  messageCount?: number;
+  lastMessageTime?: string;
+  startedAt?: string;
+}
+
+const tableData = ref<ConsultationRow[]>([]);
 const pagination = reactive({
+  currentPage: 1,
   size: 10,
   total: 0,
 });
 //会话详情
-const sessionDetail = ref({});
-const sessionMessages = ref([]);
+const sessionDetail = ref<Partial<ConsultationRow>>({});
+const sessionMessages = ref<ChatMessage[]>([]);
 const loadingMessages = ref(false);
-const viewSessionDetail = (row) => {
+//详情
+const showDetailDialog = ref(false);
+
+const viewSessionDetail = (row: ConsultationRow) => {
   loadingMessages.value = true;
   showDetailDialog.value = true;
   getSessionDetail(row.id).then((res) => {
@@ -20,19 +34,19 @@ const viewSessionDetail = (row) => {
     sessionDetail.value = row;
   });
 };
-const handleChange = (page) => {
+
+const handleChange = (page: number) => {
   pagination.currentPage = page;
   handleSearch();
 };
+
 const handleSearch = () => {
   getConsultationPage(pagination).then((res) => {
-    const { records, total } = res;
-    tableData.value = records;
-    pagination.total = total;
+    tableData.value = res.records as ConsultationRow[];
+    pagination.total = res.total;
   });
 };
-//详情
-const showDetailDialog = ref(false);
+
 onMounted(() => {
   handleSearch();
 });

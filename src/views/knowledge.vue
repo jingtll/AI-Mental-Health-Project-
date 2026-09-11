@@ -1,7 +1,8 @@
-<script setup>
+<script setup lang="ts">
 import { onMounted, ref, reactive } from "vue";
 import PageHead from "@/components/PageHead.vue";
 import TableSearch from "@/components/TableSearch.vue";
+import type { SearchFormItem } from "@/components/TableSearch.vue";
 import {
   categoryTree,
   articlePage,
@@ -11,7 +12,19 @@ import {
 } from "@/api/admin";
 import ArticleDialog from "@/components/ArticleDialog.vue";
 import { ElMessageBox, ElMessage } from "element-plus";
-const formItem = [
+
+interface ArticleRow {
+  id: number | string;
+  title?: string;
+  categoryId?: number;
+  authorName?: string;
+  readCount?: number;
+  updatedAt?: string;
+  status?: number;
+  [key: string]: unknown;
+}
+
+const formItem = ref<SearchFormItem[]>([
   {
     comp: "input",
     prop: "title",
@@ -30,116 +43,113 @@ const formItem = [
     label: "状态",
     placeholder: "请选择状态",
     options: [
-      {
-        label: "草稿",
-        value: 0,
-      },
-      {
-        label: "已发布",
-        value: 1,
-      },
-      {
-        label: "已下线",
-        value: 2,
-      },
+      { label: "草稿", value: 0 },
+      { label: "已发布", value: 1 },
+      { label: "已下线", value: 2 },
     ],
   },
-];
+]);
+
 //分页参数
 const pagination = reactive({
   currentPage: 1,
   size: 10,
   total: 0,
 });
-const handleSearch = async (formData) => {
-  // console.log(formData, "查询参数");
 
+//列表数据
+const tableData = ref<ArticleRow[]>([]);
+
+const handleSearch = async (formData?: Record<string, unknown>) => {
   const params = {
     ...pagination,
-    ...formData,
+    ...(formData || {}),
   };
   const { records, total } = await articlePage(params);
-  tableData.value = records;
+  tableData.value = records as ArticleRow[];
   pagination.total = total;
 };
-const handleChange = (page) => {
+
+const handleChange = (page: number) => {
   pagination.currentPage = page;
   handleSearch();
 };
+
 //分类映射
-const categoryMaps = reactive({});
+const categoryMaps = reactive<Record<number, string>>({});
 //分类列表
-const categories = ref([]);
-//列表数据
-const tableData = ref([]);
+const categories = ref<Array<{ label: string; value: number }>>([]);
+
 onMounted(async () => {
   const data = await categoryTree();
-  // console.log(data, "分类树");
   categories.value = data.map((item) => {
     categoryMaps[item.id] = item.categoryName;
-    return {
-      label: item.categoryName,
-      value: item.id,
-    };
+    return { label: item.categoryName, value: item.id };
   });
-  formItem[1].options = categories.value;
+  formItem.value[1].options = categories.value;
   //获取列表
   handleSearch();
 });
+
 //新增文章和编辑弹窗
 const dialogVisible = ref(false);
-const currentArticle = ref(null);
+const currentArticle = ref<ArticleRow | null>(null);
+
 const handleSuccess = () => {
-  //刷新列表
+  //关闭弹窗并刷新列表
   dialogVisible.value = false;
+  handleSearch();
 };
-const handleEdit = (row) => {
+
+const handleEdit = (row: Partial<ArticleRow>) => {
   if (!row.id) {
     currentArticle.value = null;
     dialogVisible.value = true;
-  } else {
-    //编辑
-    getArticleDetail(row.id).then((res) => {
-      // console.log(res, "文章详情");
-      currentArticle.value = res;
-      dialogVisible.value = true;
-    });
+    return;
   }
+  //编辑
+  getArticleDetail(row.id).then((res) => {
+    currentArticle.value = res as ArticleRow;
+    dialogVisible.value = true;
+  });
 };
+
 //发布
-const handlePublish = (row) => {
+const handlePublish = (row: ArticleRow) => {
   ElMessageBox.confirm(`确认发布文章${row.title}吗？`, "确认", {
     confirmButtonText: "确定发布",
     cancelButtonText: "取消",
     type: "info",
   }).then(() => {
-    changeArticleStatus(row.id, { status: 1 }).then((res) => {
+    changeArticleStatus(row.id, { status: 1 }).then(() => {
       ElMessage.success("发布成功");
       handleSearch();
     });
   });
 };
+
 //下线
-const handleUnpublish = (row) => {
+const handleUnpublish = (row: ArticleRow) => {
   ElMessageBox.confirm(`确认下线文章${row.title}吗？`, "确认", {
     confirmButtonText: "确定下线",
     cancelButtonText: "取消",
     type: "warning",
   }).then(() => {
-    changeArticleStatus(row.id, { status: 2 }).then((res) => {
+    changeArticleStatus(row.id, { status: 2 }).then(() => {
       ElMessage.success("下线成功");
       handleSearch();
     });
   });
 };
+
 //删除
-const handleDelete = (row) => {
+const handleDelete = (row: ArticleRow) => {
   ElMessageBox.confirm(`确认删除文章${row.title}吗？`, "确认", {
     confirmButtonText: "确定删除",
     cancelButtonText: "取消",
-    type: "danger",
+    type: "error",
   }).then(() => {
-    deleteArticle(row.id).then((res) => {
+    deleteArticle(row.id).then(() => {
       ElMessage.success("删除成功");
       handleSearch();
     });
