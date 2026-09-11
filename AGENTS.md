@@ -2,7 +2,7 @@
 
 Frontend-only Vue 3 SPA: psychology AI assistant (user site + admin). Backend is a remote service; this repo has no server code, tests, lint, or typecheck suite beyond `vue-tsc`.
 
-**TS status (core layer):** `config` / `utils/request` / `api` / `router` / `stores` / `main` are TypeScript. Business pages under `src/views/**` are TypeScript **except** `dashboard.vue` and `consultation.vue` (still plain JS). Do not assume `lang="ts"` on those two.
+**TS status:** Core layer, components, and **all** `src/views/**` pages (including `dashboard` and `consultation`) use TypeScript (`lang="ts"`).
 
 ## Commands
 
@@ -54,7 +54,7 @@ Auth via `localStorage`: `token` + `userInfo` (`userType` `1`=user, `2`=admin). 
 
 ## Conventions
 
-- SFC style: Vue 3 `<script setup>`. Core layer **and component layer** (App + layouts + components) use `lang="ts"`. Pages under `src/views/**` are TypeScript except `dashboard.vue` and `consultation.vue`.
+- SFC style: Vue 3 `<script setup lang="ts">` throughout `src/**` (views included).
 - HTTP helper: `src/utils/request.ts` exports typed `http` (`get/post/put/delete` → `Promise<T>`); interceptors already unwrap `data.data`. Do not use raw axios for app APIs.
 - UI: Element Plus (global). Rich text: wangEditor. Charts: echarts.
 - UI copy and comments are Chinese.
