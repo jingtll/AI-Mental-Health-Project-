@@ -15,6 +15,7 @@ npm run preview
 ```
 
 - Use **npm** (`package-lock.json` is present). No other scripts exist.
+- CI (`.github/workflows/ci.yml`): on push to `main` / `feat/**` and PRs to `main` — `npm ci` → `typecheck` → `build`, then upload `dist/`.
 - Path alias: `@` → `src` (see `vite.config.ts` and `tsconfig.json`).
 - `strict: true`. Prefer adding real types over `any`; local `as`/narrowing only with a reason.
 - TS toolchain: `typescript` 5.x + `vue-tsc` 2.x (do not jump to TypeScript 7 — current vue-tsc cannot resolve `./lib/tsc`).
