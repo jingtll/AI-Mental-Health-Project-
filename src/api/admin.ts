@@ -1,19 +1,19 @@
-import service from "@/utils/request"
+import http from "@/utils/request"
 import type { LoginResult, PageQuery, PageResult } from "@/types/api"
 import type { ChatMessage, ChatSession } from "@/types/session"
 
 export const login = (data: { username: string; password: string }) => {
-  return service.post<LoginResult>("/user/login", data)
+  return http.post<LoginResult>("/user/login", data)
 }
 
 export const categoryTree = () => {
-  return service.get<Array<{ id: number; categoryName: string }>>(
+  return http.get<Array<{ id: number; categoryName: string }>>(
     "/knowledge/category/tree",
   )
 }
 
 export const articlePage = (params: PageQuery) => {
-  return service.get<PageResult<Record<string, unknown>>>(
+  return http.get<PageResult<Record<string, unknown>>>(
     "/knowledge/article/page",
     { params },
   )
@@ -28,7 +28,7 @@ export const uploadFile = (
   formData.append("businessType", "ARTICLE")
   formData.append("businessId", String(businessInfo.businessId))
   formData.append("businessField", "cover")
-  return service.post<{ filePath: string }>("/file/upload", formData, {
+  return http.post<{ filePath: string }>("/file/upload", formData, {
     headers: {
       "content-type": "multipart/form-data",
     },
@@ -36,58 +36,58 @@ export const uploadFile = (
 }
 
 export const createArticle = (data: Record<string, unknown>) => {
-  return service.post<null>("/knowledge/article", data)
+  return http.post<null>("/knowledge/article", data)
 }
 
 export const getArticleDetail = (id: number | string) => {
-  return service.get<Record<string, unknown>>(`/knowledge/article/${id}`)
+  return http.get<Record<string, unknown>>(`/knowledge/article/${id}`)
 }
 
 export const updateArticle = (
   id: number | string,
   data: Record<string, unknown>,
 ) => {
-  return service.put<null>(`/knowledge/article/${id}`, data)
+  return http.put<null>(`/knowledge/article/${id}`, data)
 }
 
 export const changeArticleStatus = (
   id: number | string,
   data: { status: number },
 ) => {
-  return service.put<null>(`/knowledge/article/${id}/status`, data)
+  return http.put<null>(`/knowledge/article/${id}/status`, data)
 }
 
 export const deleteArticle = (id: number | string) => {
-  return service.delete<null>(`/knowledge/article/${id}`)
+  return http.delete<null>(`/knowledge/article/${id}`)
 }
 
 export const getConsultationPage = (params: PageQuery) => {
-  return service.get<PageResult<ChatSession>>("/psychological-chat/sessions", {
+  return http.get<PageResult<ChatSession>>("/psychological-chat/sessions", {
     params,
   })
 }
 
 export const getSessionDetail = (sessionId: number | string) => {
-  return service.get<ChatMessage[]>(
+  return http.get<ChatMessage[]>(
     `/psychological-chat/sessions/${sessionId}/messages`,
   )
 }
 
 export const getEmotionalPage = (params: PageQuery) => {
-  return service.get<PageResult<Record<string, unknown>>>(
+  return http.get<PageResult<Record<string, unknown>>>(
     "/emotion-diary/admin/page",
     { params },
   )
 }
 
 export const deleteEmotional = (id: number | string) => {
-  return service.delete<null>(`/emotion-diary/admin/${id}`)
+  return http.delete<null>(`/emotion-diary/admin/${id}`)
 }
 
 export const getAnalyticsOverview = () => {
-  return service.get<Record<string, unknown>>("/data-analytics/overview")
+  return http.get<Record<string, unknown>>("/data-analytics/overview")
 }
 
 export const logout = () => {
-  return service.post<null>("/user/logout")
+  return http.post<null>("/user/logout")
 }

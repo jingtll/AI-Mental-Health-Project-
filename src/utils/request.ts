@@ -1,4 +1,5 @@
 import axios from "axios"
+import type { AxiosRequestConfig } from "axios"
 import { ElMessage } from "element-plus"
 import type { ApiResponse } from "@/types/api"
 
@@ -44,4 +45,23 @@ service.interceptors.response.use(
   (error) => Promise.reject(error),
 )
 
-export default service
+/**
+ * 拦截器成功时已把 ApiResponse.data 拆包为 T。
+ * axios 声明类型仍是 AxiosResponse<T>，这里统一收敛为 Promise<T>。
+ */
+const http = {
+  get<T>(url: string, config?: AxiosRequestConfig): Promise<T> {
+    return service.get(url, config) as unknown as Promise<T>
+  },
+  post<T>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T> {
+    return service.post(url, data, config) as unknown as Promise<T>
+  },
+  put<T>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T> {
+    return service.put(url, data, config) as unknown as Promise<T>
+  },
+  delete<T>(url: string, config?: AxiosRequestConfig): Promise<T> {
+    return service.delete(url, config) as unknown as Promise<T>
+  },
+}
+
+export default http

@@ -54,7 +54,8 @@ Auth via `localStorage`: `token` + `userInfo` (`userType` `1`=user, `2`=admin). 
 
 ## Conventions
 
-- SFC style: Vue 3 `<script setup>`. Core layer is `.ts`; pages remain JS until a later migration pass.
+- SFC style: Vue 3 `<script setup>`. Core layer **and component layer** (App + layouts + components) use `lang="ts"`. Pages under `src/views/**` are still JS — migrate them next.
+- HTTP helper: `src/utils/request.ts` exports typed `http` (`get/post/put/delete` → `Promise<T>`); interceptors already unwrap `data.data`. Do not use raw axios for app APIs.
 - UI: Element Plus (global). Rich text: wangEditor. Charts: echarts.
 - UI copy and comments are Chinese.
 - When adding a page: register route under the correct layout shell; admin nav also needs `meta.title` / `meta.icon` (consumed by `Sidebar.vue`).

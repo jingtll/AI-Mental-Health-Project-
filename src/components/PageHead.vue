@@ -1,10 +1,12 @@
-<script setup>
-const props = defineProps({
-  title: {
-    type: String,
-    default: "页面标题",
+<script setup lang="ts">
+const props = withDefaults(
+  defineProps<{
+    title?: string
+  }>(),
+  {
+    title: "页面标题",
   },
-});
+)
 </script>
 
 <template>
