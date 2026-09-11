@@ -1,9 +1,21 @@
-<script setup>
-import { ref, reactive } from "vue";
+<script setup lang="ts">
+import { reactive } from "vue";
 import { dayjs, ElMessage } from "element-plus";
-import { addEmotionDiary } from "../api/frontend";
+import { addEmotionDiary } from "@/api/frontend";
+
 const iconUrl = new URL("@/assets/images/like.png", import.meta.url).href;
-const diaryForm = reactive({
+
+interface DiaryForm {
+  diaryDate: string
+  moodScore: number | null
+  dominantEmotion: string
+  emotionTriggers: string
+  diaryContent: string
+  sleepQuality: number | null
+  stressLevel: number | null
+}
+
+const diaryForm = reactive<DiaryForm>({
   diaryDate: dayjs().format("YYYY-MM-DD"),
   moodScore: null,
   dominantEmotion: "",
@@ -60,7 +72,7 @@ const emotionOptions = [
     url: new URL("@/assets/images/困惑.png", import.meta.url).href,
   },
 ];
-const selectEmotion = (emotion) => {
+const selectEmotion = (emotion: string) => {
   diaryForm.dominantEmotion = emotion;
 };
 //按钮
@@ -76,12 +88,11 @@ const resetForm = () => {
   });
 };
 const submitForm = () => {
-  // console.log(diaryForm);
   if (!diaryForm.moodScore) {
     ElMessage.error("请选择您的情绪评分");
     return;
   }
-  addEmotionDiary(diaryForm).then((res) => {
+  addEmotionDiary(diaryForm).then(() => {
     ElMessage.success("提交成功");
     resetForm();
   });

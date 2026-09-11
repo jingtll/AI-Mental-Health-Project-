@@ -1,28 +1,45 @@
-<script setup>
+<script setup lang="ts">
 import { getKnowledgeDetail } from "@/api/frontend";
-import { Avatar, Platform } from "@element-plus/icons-vue";
 import { dayjs } from "element-plus";
 import { ref, onMounted } from "vue";
-const props = defineProps({
-  id: String,
-});
+
+const props = defineProps<{
+  id?: string
+}>();
+
 const iconUrl = new URL("@/assets/images/book.png", import.meta.url).href;
-const articleDetail = ref({});
-const formatContent = (content) => {
+
+interface ArticleDetailData {
+  id?: number | string
+  title?: string
+  content?: string
+  summary?: string
+  categoryName?: string
+  authorName?: string
+  updatedAt?: string
+  readCount?: number
+  tagArray?: string[]
+  [key: string]: unknown
+}
+
+const articleDetail = ref<ArticleDetailData>({});
+
+const formatContent = (content?: string) => {
   if (!content) return "";
 
   // 基本的HTML清理和格式化
-  let formatted = content
+  const formatted = content
     .replace(/\n/g, "<br>")
     .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
     .replace(/\*(.*?)\*/g, "<em>$1</em>");
 
   return formatted;
 };
+
 onMounted(() => {
+  if (!props.id) return;
   getKnowledgeDetail(props.id).then((res) => {
-    // console.log(res);
-    articleDetail.value = res;
+    articleDetail.value = res as ArticleDetailData;
   });
 });
 </script>

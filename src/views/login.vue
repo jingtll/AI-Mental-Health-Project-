@@ -1,5 +1,6 @@
-<script setup>
+<script setup lang="ts">
 import { ref, reactive } from "vue";
+import type { FormInstance, FormRules } from "element-plus";
 import { login } from "@/api/admin";
 import { useRouter } from "vue-router";
 const router = useRouter();
@@ -7,32 +8,28 @@ const formData = reactive({
   username: "",
   password: "",
 });
-const rules = reactive({
+const rules = reactive<FormRules>({
   username: [{ required: true, message: "请输入用户名", trigger: "blur" }],
   password: [{ required: true, message: "请输入密码", trigger: "blur" }],
 });
-const ruleFormRef = ref();
-//登录
-const submitForm = async (formEl) => {
+const ruleFormRef = ref<FormInstance>();
+const submitForm = async (formEl: FormInstance | undefined) => {
   if (!formEl) return;
-  await formEl.validate((valid, fields) => {
-    if (valid) {
-      login(formData).then((data) => {
-        //判断token·是否存在·
-        if (!data.token) {
-          return console.error("登录失败");
-        }
-        //登录成功，保存token和用户信息
-        localStorage.setItem("token", data.token);
-        localStorage.setItem("userInfo", JSON.stringify(data.userInfo));
-        //根据用户角色决定跳转路径
-        if (data.userInfo.userType === 2) {
-          router.push("/back/dashboard");
-        } else {
-          router.push("/");
-        }
-      });
-    }
+  await formEl.validate((valid) => {
+    if (!valid) return;
+    login(formData).then((data) => {
+      if (!data.token) {
+        console.error("登录失败");
+        return;
+      }
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("userInfo", JSON.stringify(data.userInfo));
+      if (data.userInfo.userType === 2) {
+        router.push("/back/dashboard");
+      } else {
+        router.push("/");
+      }
+    });
   });
 };
 </script>

@@ -1,5 +1,6 @@
-<script setup>
+<script setup lang="ts">
 import { ref, reactive } from "vue";
+import type { FormInstance, FormRules } from "element-plus";
 import { register } from "@/api/frontend";
 import { ElMessage } from "element-plus";
 import { useRouter } from "vue-router";
@@ -12,29 +13,36 @@ const formData = reactive({
   password: "",
   confirmPassword: "",
   gender: 0,
-  userType: 1, //1:普通用户 2:管理员
+  userType: 1 as 1 | 2,
 });
-const rules = reactive({
+const rules = reactive<FormRules>({
   username: [{ required: true, message: "请输入用户名", trigger: "blur" }],
   email: [{ required: true, message: "请输入邮箱", trigger: "blur" }],
   password: [{ required: true, message: "请输入密码", trigger: "blur" }],
   confirmPassword: [{ required: true, message: "请确认密码", trigger: "blur" }],
 });
 
-//表单提交
 const router = useRouter();
-const submitFormRef = ref(null);
-const submitForm = async (formEl) => {
+const submitFormRef = ref<FormInstance>();
+const submitForm = async (formEl: FormInstance | undefined) => {
   if (!formEl) return;
-  formEl.validate(async (valid) => {
-    register(formData).then(({ data }) => {
-      // console.log(data);
-      if (!data) {
+  await formEl.validate((valid) => {
+    if (!valid) return;
+    register(formData).then((data) => {
+      if (data == null || data === "") {
         ElMessage.success("注册成功");
         router.push("/auth/login");
+        return;
       }
-      if (data.code === "BUSINESS_ERROR") {
-        ElMessage.error(data.message);
+      if (
+        typeof data === "object" &&
+        data !== null &&
+        "code" in data &&
+        (data as { code?: string }).code === "BUSINESS_ERROR"
+      ) {
+        ElMessage.error(
+          String((data as { message?: string }).message || "注册失败"),
+        );
       }
     });
   });
