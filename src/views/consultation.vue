@@ -174,8 +174,8 @@ const startAIResponse = (sessionId, userMessage) => {
   };
 
   messages.value.push(aiMessage);
-  //调用流式接口
 
+  //调用流式接口
   const ctrl = new AbortController(); //用来终止fetch请求
   fetchEventSource("/api/psychological-chat/stream", {
     method: "POST",
@@ -190,7 +190,7 @@ const startAIResponse = (sessionId, userMessage) => {
     }),
     signal: ctrl.signal, //添加取消信号
     onopen: (response) => {
-      // console.log(response);
+      console.log(response);
       if (response.headers.get("content-type") !== "text/event-stream") {
         ElMessage.error("服务器返回的不是流式格式");
       }
