@@ -1,6 +1,6 @@
-<script setup>
+<script setup lang="ts">
 import { getAnalyticsOverview } from "@/api/admin";
-import { onMounted, ref, reactive } from "vue";
+import { onMounted, ref } from "vue";
 import * as echarts from "echarts";
 
 //统计图片引入
@@ -9,7 +9,51 @@ const iconUrl2 = new URL("@/assets/images/like.png", import.meta.url).href;
 const iconUrl3 = new URL("@/assets/images/comments.png", import.meta.url).href;
 const iconUrl4 = new URL("@/assets/images/smile.png", import.meta.url).href;
 
-const aiData = ref({});
+interface TrendPoint {
+  date?: string;
+  avgMoodScore?: number;
+  recordCount?: number;
+  sessionCount?: number;
+  userCount?: number;
+  activeUsers?: number;
+  newUsers?: number;
+  diaryUsers?: number;
+  consultationUsers?: number;
+  [key: string]: unknown;
+}
+
+interface AnalyticsOverview {
+  systemOverview?: {
+    totalUsers?: number;
+    activeUsers?: number;
+    totalDiaries?: number;
+    todayNewDiaries?: number;
+    totalSessions?: number;
+    todayNewSessions?: number;
+    avgMoodScore?: number;
+    [key: string]: unknown;
+  };
+  emotionTrend?: TrendPoint[];
+  consultationStats?: {
+    totalSessions?: number;
+    avgDurationMinutes?: number;
+    dailyTrend?: TrendPoint[];
+    [key: string]: unknown;
+  };
+  userActivity?: TrendPoint[];
+  [key: string]: unknown;
+}
+
+const aiData = ref<AnalyticsOverview>({});
+
+//情绪趋势
+const emotionChartRef = ref<HTMLDivElement | null>(null);
+const consultationChartRef = ref<HTMLDivElement | null>(null);
+const userActiveChartRef = ref<HTMLDivElement | null>(null);
+
+let emotionChart: echarts.EChartsType | null = null;
+let consultationChart: echarts.EChartsType | null = null;
+let userActiveChart: echarts.EChartsType | null = null;
 
 //初始化图表
 const initCharts = () => {
@@ -18,8 +62,6 @@ const initCharts = () => {
   initUserActiveChart();
 };
 //情绪趋势
-let emotionChart = null;
-const emotionChartRef = ref(null);
 const initEmotionChart = () => {
   if (!emotionChartRef.value) return;
   //销毁现有图表
@@ -29,7 +71,7 @@ const initEmotionChart = () => {
   //创建echarts实例
   emotionChart = echarts.init(emotionChartRef.value);
   //获取情绪趋势的数据
-  const TrendData = aiData.value.emotionTrend;
+  const TrendData = aiData.value.emotionTrend ?? [];
   //配置项
   const option = {
     title: {
@@ -125,8 +167,6 @@ const initEmotionChart = () => {
   emotionChart.setOption(option);
 };
 //咨询会话统计
-let consultationChart = null;
-const consultationChartRef = ref(null);
 const initConsultationChart = () => {
   if (!consultationChartRef.value) return;
   //销毁现有图表
@@ -136,7 +176,7 @@ const initConsultationChart = () => {
   //创建echarts实例
   consultationChart = echarts.init(consultationChartRef.value);
   //获取数据
-  const dailyTrend = aiData.value.consultationStats.dailyTrend;
+  const dailyTrend = aiData.value.consultationStats?.dailyTrend ?? [];
   const option = {
     title: {
       text: "咨询活动统计",
@@ -243,8 +283,6 @@ const initConsultationChart = () => {
   consultationChart.setOption(option);
 };
 //用户活跃度分析
-let userActiveChart = null;
-const userActiveChartRef = ref(null);
 const initUserActiveChart = () => {
   if (!userActiveChartRef.value) return;
   //销毁现有图表
@@ -254,7 +292,7 @@ const initUserActiveChart = () => {
   //创建echarts实例
   userActiveChart = echarts.init(userActiveChartRef.value);
   //获取数据
-  const activityData = aiData.value.userActivity;
+  const activityData = aiData.value.userActivity ?? [];
   const option = {
     title: {
       text: "用户活跃度趋势",
@@ -391,7 +429,7 @@ const initUserActiveChart = () => {
 onMounted(() => {
   getAnalyticsOverview().then((res) => {
     // console.log(res);
-    aiData.value = res;
+    aiData.value = res as AnalyticsOverview;
     initCharts();
   });
 });
@@ -496,7 +534,7 @@ onMounted(() => {
               <div class="stat-item">
                 <div class="stat-label">活跃用户</div>
                 <div class="stat-value">
-                  {{ aiData.systemOverview.activeUsers }}
+                  {{ aiData.systemOverview?.activeUsers }}
                 </div>
               </div>
             </div>
