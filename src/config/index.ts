@@ -10,7 +10,7 @@ export const brand = {
   /** 品牌名（导航、侧栏、标题） */
   name: "心耘",
   /** 品牌全称 / 副标 */
-  fullName: "心灵耕耘",
+  fullName: "心灵耕耘平台",
   /** AI 助手名（与用户对话的角色） */
   assistantName: "心耘AI助手",
   /** 助手一句话定位 */
@@ -25,7 +25,7 @@ export const brand = {
   /** 后台副标题 */
   adminSubtitle: "管理后台",
   /** 页脚版权（年份自动取当前年） */
-  copyright: `© ${new Date().getFullYear()} 心耘 · 心灵耕耘`,
+  copyright: `© ${new Date().getFullYear()} 心耘 · 心灵耕耘平台`,
 } as const
 
 /**

@@ -7,33 +7,33 @@
  *    现在分别接到 AI 咨询与情绪日记，未登录时先引导登录。
  *  - `height: calc(100vh - 285px)` 是写死的魔法值，头部/页脚一改就错位 → 改为内容驱动高度。
  *  - 品牌文案硬编码「一次温暖的对话」等 → 统一取 config 的 brand。
- *  - 从「只有一个 hero」补成完整落地结构：hero + 三个功能入口 + 收尾行动区，
- *    让首页真正承担导航职责，而不是一个装饰页。
+ *  - 收尾行动区已按需求移除，保留 hero + 功能入口。
  */
-import { computed } from "vue"
-import { useRouter } from "vue-router"
-import { ElMessage } from "element-plus"
-import { brand } from "@/config"
+import { computed } from "vue";
+import { useRouter } from "vue-router";
+import { ElMessage } from "element-plus";
+import { brand } from "@/config";
 
-const router = useRouter()
-const assistantAvatar = "/logo.png"
+const router = useRouter();
+const assistantAvatar = "/logo.png";
 
-const isLoggedIn = computed(() => localStorage.getItem("token") !== null)
+const isLoggedIn = computed(() => localStorage.getItem("token") !== null);
 
 interface FeatureItem {
-  key: string
-  title: string
-  description: string
-  icon: string
-  to: string
-  requiresAuth: boolean
+  key: string;
+  title: string;
+  description: string;
+  icon: string;
+  to: string;
+  requiresAuth: boolean;
 }
 
 const features: FeatureItem[] = [
   {
     key: "chat",
     title: "AI 咨询",
-    description: "随时说出此刻的心情，得到不评判的倾听与回应，并看到情绪的变化轨迹。",
+    description:
+      "随时说出此刻的心情，得到不评判的倾听与回应，并看到情绪的变化轨迹。",
     icon: "ChatDotRound",
     to: "/consultation",
     requiresAuth: true,
@@ -41,7 +41,8 @@ const features: FeatureItem[] = [
   {
     key: "diary",
     title: "情绪日记",
-    description: "用一分钟记录今天的情绪评分、主要情绪与生活指标，慢慢看清自己的节奏。",
+    description:
+      "用一分钟记录今天的情绪评分、主要情绪与生活指标，慢慢看清自己的节奏。",
     icon: "Notebook",
     to: "/emotion-diary",
     requiresAuth: true,
@@ -49,21 +50,22 @@ const features: FeatureItem[] = [
   {
     key: "knowledge",
     title: "知识库",
-    description: "焦虑、睡眠、压力、自我成长——用可靠的心理科普，理解正在发生的感受。",
+    description:
+      "焦虑、睡眠、压力、自我成长——用可靠的心理科普，理解正在发生的感受。",
     icon: "Reading",
     to: "/knowledge",
     requiresAuth: false,
   },
-]
+];
 
 const go = (item: Pick<FeatureItem, "to" | "requiresAuth">) => {
   if (item.requiresAuth && !isLoggedIn.value) {
-    ElMessage.info("登录后即可开始记录与对话")
-    router.push("/auth/login")
-    return
+    ElMessage.info("登录后即可开始记录与对话");
+    router.push("/auth/login");
+    return;
   }
-  router.push(item.to)
-}
+  router.push(item.to);
+};
 </script>
 
 <template>
@@ -106,9 +108,15 @@ const go = (item: Pick<FeatureItem, "to" | "requiresAuth">) => {
           </div>
 
           <ul class="hero__facts">
-            <li><el-icon><Clock /></el-icon>随时可用，不必等待</li>
-            <li><el-icon><ChatLineRound /></el-icon>不评判的倾听</li>
-            <li><el-icon><TrendCharts /></el-icon>情绪变化看得见</li>
+            <li>
+              <el-icon><Clock /></el-icon>随时可用，不必等待
+            </li>
+            <li>
+              <el-icon><ChatLineRound /></el-icon>不评判的倾听
+            </li>
+            <li>
+              <el-icon><TrendCharts /></el-icon>情绪变化看得见
+            </li>
           </ul>
         </div>
 
@@ -123,8 +131,8 @@ const go = (item: Pick<FeatureItem, "to" | "requiresAuth">) => {
     <!-- 功能入口 -->
     <section class="features" aria-labelledby="features-title">
       <div class="features__inner">
-        <h2 id="features-title" class="features__title">从这里开始</h2>
-        <p class="features__subtitle">三种方式，陪你一点点把心安放好</p>
+        <!-- <h2 id="features-title" class="features__title">从这里开始</h2> -->
+        <!-- <p class="features__subtitle">三种方式，陪你一点点把心安放好</p> -->
 
         <div class="features__grid">
           <article
@@ -150,23 +158,6 @@ const go = (item: Pick<FeatureItem, "to" | "requiresAuth">) => {
         </div>
       </div>
     </section>
-
-    <!-- 收尾行动区 -->
-    <section class="closing">
-      <div class="closing__inner">
-        <h2 class="closing__title">今天的心情，值得被认真对待</h2>
-        <p class="closing__text">
-          {{ brand.description }}
-        </p>
-        <el-button
-          type="primary"
-          size="large"
-          @click="go({ to: isLoggedIn ? '/consultation' : '/auth/register', requiresAuth: false })"
-        >
-          {{ isLoggedIn ? "继续说点什么" : "免费注册，开始记录" }}
-        </el-button>
-      </div>
-    </section>
   </div>
 </template>
 
@@ -182,7 +173,18 @@ const go = (item: Pick<FeatureItem, "to" | "requiresAuth">) => {
   position: relative;
   overflow: hidden;
   padding: var(--xy-space-20) var(--xy-space-5);
-  background: var(--xy-gradient-brand);
+  background-color: var(--xy-primary-800);
+  background-image:
+    linear-gradient(
+      120deg,
+      rgba(20, 51, 45, 0.72) 0%,
+      rgba(20, 51, 45, 0.45) 55%,
+      rgba(20, 51, 45, 0.28) 100%
+    ),
+    url("/background.png");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
   color: #fff;
 
   @media (max-width: 900px) {
@@ -358,6 +360,7 @@ const go = (item: Pick<FeatureItem, "to" | "requiresAuth">) => {
 
   &__visual {
     flex-shrink: 0;
+    margin-right: clamp(40px, 12vw, 180px);
   }
 }
 
@@ -474,45 +477,6 @@ const go = (item: Pick<FeatureItem, "to" | "requiresAuth">) => {
     font-size: var(--xy-text-base);
     font-weight: 600;
     color: var(--xy-primary-600);
-  }
-}
-
-// -----------------------------------------------------------------------------
-// 收尾行动区
-// -----------------------------------------------------------------------------
-.closing {
-  padding: 0 var(--xy-space-5) var(--xy-space-16);
-
-  @media (max-width: 900px) {
-    padding: 0 var(--xy-space-4) var(--xy-space-10);
-  }
-
-  &__inner {
-    max-width: var(--xy-content-width);
-    margin: 0 auto;
-    padding: var(--xy-space-12) var(--xy-space-8);
-    border: 1px solid var(--xy-border);
-    border-radius: var(--xy-radius-xl);
-    background: var(--xy-gradient-brand-soft);
-    text-align: center;
-
-    @media (max-width: 640px) {
-      padding: var(--xy-space-8) var(--xy-space-5);
-    }
-  }
-
-  &__title {
-    font-size: var(--xy-text-2xl);
-    font-weight: 700;
-    color: var(--xy-ink-900);
-  }
-
-  &__text {
-    max-width: 52ch;
-    margin: var(--xy-space-3) auto var(--xy-space-6);
-    font-size: var(--xy-text-md);
-    line-height: var(--xy-leading-relaxed);
-    color: var(--xy-ink-500);
   }
 }
 </style>
