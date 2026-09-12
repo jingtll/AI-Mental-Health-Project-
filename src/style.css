@@ -1,3 +1,15 @@
+/* =============================================================================
+   心耘 · 基础 reset
+
+   改动说明（相对改造前）：
+   1. 删除 reset 里的 `outline: 0` —— 它会连 <summary> 等可聚焦元素的焦点环
+      一起抹掉；焦点可见改由 src/styles/_base.scss 的 :focus-visible 统一提供。
+   2. 删除全局 `.el-header { height: 50px !important }` —— 它与 BackenLayout 的
+      74px !important 互相打架，header 高度归还给布局组件自己决定。
+   3. 修正 `.pagination-info { padding: 10px, 0 }`：逗号是非法 CSS，该声明从未
+      生效（正确写法为 `padding: 10px 0`）。
+   ============================================================================= */
+
 html,
 body,
 div,
@@ -69,33 +81,31 @@ video {
   margin: 0;
   padding: 0;
   border: 0;
-  outline: 0;
-  /* font-size:100%; */
   vertical-align: baseline;
   background: transparent;
 }
 
 a {
   text-decoration: none;
+  color: inherit;
 }
+
 li {
   list-style: none;
 }
+
 body {
-  height: 100vh;
+  min-height: 100vh;
 }
+
 #app {
-  height: 100%;
+  min-height: 100vh;
 }
-.el-header {
-  height: 50px !important;
-  padding: 0 !important;
-  box-shadow: 0px 1px 1px rgba(0, 0, 0, 0.05);
-  border-bottom: 1px solid transparent;
-}
+
 .pagination-info {
-  padding: 10px, 0;
-  background-color: #fff;
+  padding: 10px 0;
+  background-color: var(--xy-surface);
+
   .el-pagination {
     justify-content: end;
   }

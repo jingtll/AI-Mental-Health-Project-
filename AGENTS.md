@@ -29,9 +29,14 @@ npm run preview
 | `src/api/frontend.ts` | User-site API |
 | `src/api/admin.ts` | Admin API + login |
 | `src/utils/request.ts` | Shared axios; all normal HTTP goes through this |
-| `src/config/index.ts` | `fileBaseUrl` for file/cover absolute URLs |
+| `src/utils/session.ts` | Only reader/writer of `token` + `userInfo` (avoids the old `userinfo` key typo) |
+| `src/utils/format.ts` | Null-safe date/time/duration formatting |
+| `src/utils/emotion.ts` | Single source of emotion/risk mappings, tag types and emotion colors |
+| `src/styles/` | Design tokens + global base/keyframes + Element Plus overrides (imported once in `main.ts`) |
+| `src/config/index.ts` | `fileBaseUrl` for file/cover absolute URLs, plus the `brand` constants |
 | `src/stores/admin.ts` | Only Pinia store (sidebar collapse) |
 | `src/types/` | Shared API/session/emotion types |
+| `src/components/consult/` | Presentational components for the chat page (`EmotionGarden`, `SessionList`) |
 
 Auth via `localStorage`: `token` + `userInfo` (`userType` `1`=user, `2`=admin). Router guard in `src/router/index.ts` routes by type; admin is forced into `/back/*`.
 
@@ -60,10 +65,14 @@ Auth via `localStorage`: `token` + `userInfo` (`userType` `1`=user, `2`=admin). 
 - UI: Element Plus (global). Rich text: wangEditor. Charts: echarts.
 - UI copy and comments are Chinese.
 - When adding a page: register route under the correct layout shell; admin nav also needs `meta.title` / `meta.icon` (consumed by `Sidebar.vue`).
-- Emotion / risk-tag helpers and chart styling reference live in `课件.md`; layout CSS snippets in `src/项目样式.md`. Prefer copying those patterns over inventing new mappings.
+- **Brand is single-sourced.** Product name「心耘」, full name「心灵耕耘」and the assistant name live in `brand` (`src/config/index.ts`) and are rendered via `<BrandLogo />`. Never hardcode a brand name, and never reintroduce the retired names「宁渡」/「小暖」/「心理健康AI助手」.
+- **Styling goes through design tokens.** Use `var(--xy-*)` from `src/styles/_tokens.scss` for every color/space/radius/shadow/duration; do not write raw hex in SFC styles. Global helpers live in `src/styles/_base.scss` (`.xy-card`, `.xy-empty`, `.xy-skeleton`, `.xy-visually-hidden`). All `@keyframes` are prefixed `xy-` and defined in `src/styles/_keyframes.scss` — this project previously referenced four animations that were never defined, so always define before referencing.
+- **Accessibility floor:** color contrast ≥ 4.5:1 for text (token values are pre-verified, comments record each ratio), visible `:focus-visible` rings, ≥44px touch targets, no color-only status indicators, and respect `prefers-reduced-motion`. Icon-only buttons need `aria-label`.
+- Date/time on screen must go through `src/utils/format.ts` (raw ISO strings were previously rendered directly). Emotion/risk mappings must come from `src/utils/emotion.ts` rather than being redefined per page.
+- Emotion / risk-tag semantics still reference `课件.md`; prefer those mappings over inventing new ones. `src/项目样式.md` is a **pre-token** style dump kept only for historical comparison — its hardcoded colors, fixed widths and emoji icons are deprecated.
 - `AI-project学习笔记.md` is a learning write-up and may lag the code; trust source files over it.
 - Filename `BackenLayout.vue` is intentional misspelling—do not rename without updating imports.
-- `dist/` is a committed build output; ignore unless the user asks to rebuild.
+- `dist/` is a build output and is **gitignored** (`.gitignore` has `dist/`), so it is not a committed artifact despite what earlier notes said — ignore it unless the user asks to rebuild.
 
 ## Backend-dependent features
 

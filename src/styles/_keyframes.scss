@@ -1,0 +1,104 @@
+// =============================================================================
+// 心耘 · 动效关键帧
+//
+// 背景：改造前全项目 0 个 @keyframes 定义，而 consultation.vue 引用了
+// breathing / pulse / typing / fadeInUp 四个动画 —— 四处动画全部静默失效。
+// 此处统一补齐并加 xy- 前缀，同时提供 prefers-reduced-motion 兜底。
+// =============================================================================
+
+// 呼吸：AI 助手头像圈的缓慢起伏
+@keyframes xy-breathing {
+  0%,
+  100% {
+    transform: scale(1);
+    box-shadow: 0 6px 24px rgba(47, 125, 109, 0.22);
+  }
+  50% {
+    transform: scale(1.06);
+    box-shadow: 0 10px 32px rgba(47, 125, 109, 0.32);
+  }
+}
+
+// 脉冲：在线状态圆点
+@keyframes xy-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.45;
+    transform: scale(0.82);
+  }
+}
+
+// 打字点：AI 正在输入
+@keyframes xy-typing {
+  0%,
+  60%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.45;
+  }
+  30% {
+    transform: translateY(-4px);
+    opacity: 1;
+  }
+}
+
+// 上浮淡入：消息气泡 / 卡片入场
+@keyframes xy-fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// 纯淡入：遮罩、骨架
+@keyframes xy-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+// 骨架屏微光
+@keyframes xy-shimmer {
+  from {
+    background-position: -200% 0;
+  }
+  to {
+    background-position: 200% 0;
+  }
+}
+
+// 柔和光环：hero 装饰
+@keyframes xy-halo {
+  0%,
+  100% {
+    opacity: 0.5;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.04);
+  }
+}
+
+// 无障碍：用户声明减少动效时，只保留必要的状态变化，不做位移/缩放
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

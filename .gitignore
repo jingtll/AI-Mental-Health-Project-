@@ -65,11 +65,14 @@ ehthumbs.db
 
 # Agent / AI 本地工作区（非项目源码）
 .claude/
+.dsh-claude-import/
+.playwright-mcp/
 tasks/
 .cursor/
 .opencode/
 .codex/
 .agents/
+.mimo/
 
 # 临时产物
 tmp/

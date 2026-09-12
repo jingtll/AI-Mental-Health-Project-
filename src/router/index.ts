@@ -81,6 +81,14 @@ const frontendRoutes: RouteRecordRaw[] = [
 const router = createRouter({
   history: createWebHistory(),
   routes: [...backendRoutes, ...frontendRoutes],
+  /**
+   * 切换路由时回到页面顶部。
+   * 原先没有 scrollBehavior：从知识库翻到文章详情、或从长列表进入咨询页时，
+   * 会继承上一页的滚动位置，用户看到的是页面中段。浏览器前进/后退时恢复原位置。
+   */
+  scrollBehavior(_to, _from, savedPosition) {
+    return savedPosition ?? { top: 0 }
+  },
 })
 
 router.beforeEach((to, _from, next) => {

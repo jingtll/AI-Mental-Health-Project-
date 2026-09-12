@@ -1,0 +1,227 @@
+// =============================================================================
+// 心耘 · 设计令牌（Design Tokens）
+// 品牌：心耘 / 心灵耕耘  视觉方向：温润心田（青绿主色 + 暖砂强调 + 纸白底）
+//
+// 用法约定：
+//   页面/组件样式统一使用 CSS 变量 var(--xy-*)；
+//   SCSS 变量仅供本目录内的 mixin 与覆盖文件使用。
+//   禁止在 SFC 里再写裸 hex —— 需要新色请先在此登记。
+//
+// 无障碍约定（所有前景色均已验算对比度，白底）：
+//   正文文字       ≥ 4.5:1  → 用 --xy-ink-900 / --xy-ink-700 / --xy-ink-500
+//   交互色(按钮/链接) ≥ 4.5:1  → 用 --xy-primary-500 及以上
+//   --xy-primary-400 仅为「原品牌色」，对比度 4.1:1，只允许用于渐变、
+//   大面积色块与 ≥24px 大标题，禁止用于小号文字。
+// =============================================================================
+
+// -----------------------------------------------------------------------------
+// SCSS 变量（供 mixin / element 覆盖使用）
+// -----------------------------------------------------------------------------
+$xy-breakpoint-sm: 640px;
+$xy-breakpoint-md: 900px;
+$xy-breakpoint-lg: 1200px;
+$xy-content-width: 1200px;
+$xy-reading-width: 760px;
+
+:root {
+  // ---------------------------------------------------------------------------
+  // 品牌主色 · 心耘青绿：取「耕耘生长」之意，延续原首页/登录页青绿血脉
+  // ---------------------------------------------------------------------------
+  --xy-primary-50: #eef6f3;
+  --xy-primary-100: #d6eae4;
+  --xy-primary-200: #add5ca;
+  --xy-primary-300: #7fbbab;
+  --xy-primary-400: #3d8a7a; // 原品牌色：渐变 / 大色块专用
+  --xy-primary-500: #2f7d6d; // 交互主色：白字 4.91:1
+  --xy-primary-600: #27685a;
+  --xy-primary-700: #1f5348;
+  --xy-primary-800: #1a423a;
+  --xy-primary-900: #14332d;
+
+  // ---------------------------------------------------------------------------
+  // 暖砂强调色：情绪花园 / 提示 / 唤醒，克制使用
+  // ---------------------------------------------------------------------------
+  --xy-accent-50: #fdf8ef;
+  --xy-accent-100: #f9ebd5;
+  --xy-accent-200: #f1d6a8;
+  --xy-accent-300: #e5b972;
+  --xy-accent-400: #d69e45;
+  --xy-accent-500: #b9822c; // 3.34:1，仅装饰/图标
+  --xy-accent-600: #8f6420; // 5.23:1，可做文字
+  --xy-accent-700: #6f4d19;
+
+  // ---------------------------------------------------------------------------
+  // 中性 · 纸白与墨色（带极轻的青绿灰调，避免纯灰的廉价感）
+  // ---------------------------------------------------------------------------
+  --xy-ink-900: #1b2624; // 标题        16:1
+  --xy-ink-700: #3a4744; // 正文        10:1
+  --xy-ink-600: #4c5a56;
+  --xy-ink-500: #5f6e6a; // 次要文字     5.35:1
+  --xy-ink-400: #8a9691; // 占位/图标    仅装饰
+  --xy-ink-300: #a9b3af; // 禁用
+  --xy-ink-200: #c7cfcc;
+
+  --xy-bg: #f6f9f8; // 页面底色
+  --xy-bg-warm: #fbf9f6; // 暖色区块底色
+  --xy-surface: #ffffff; // 卡片
+  --xy-surface-alt: #f1f6f4; // 次级容器
+  --xy-surface-sunken: #eaf1ee;
+  --xy-border: #e4ebe8;
+  --xy-border-strong: #cfdad6;
+
+  // ---------------------------------------------------------------------------
+  // 语义色
+  // ---------------------------------------------------------------------------
+  --xy-success: #2f7d6d;
+  --xy-success-bg: #eef6f3;
+  --xy-warning: #8f6420;
+  --xy-warning-bg: #fdf8ef;
+  --xy-danger: #a8413c; // 6.02:1
+  --xy-danger-bg: #fbf0ef;
+  --xy-info: #55707f; // 5.24:1
+  --xy-info-bg: #eff4f6;
+
+  // 风险等级四级色阶（后台表格 / 情绪花园 / 详情弹窗共用）
+  --xy-risk-0: #2f7d6d; // 正常
+  --xy-risk-1: #8f6420; // 关注
+  --xy-risk-2: #a85822; // 预警  5.14:1
+  --xy-risk-3: #a8413c; // 危机
+  --xy-risk-0-bg: #eef6f3;
+  --xy-risk-1-bg: #fdf8ef;
+  --xy-risk-2-bg: #fbf1ea;
+  --xy-risk-3-bg: #fbf0ef;
+
+  // ---------------------------------------------------------------------------
+  // 情绪色板（8 种主要情绪，全部 ≥4.5:1，可与情绪图片资源一一对应）
+  // 替代原先的亮色系（#7ED321 / #FFD700 等在白底上不可读）
+  // ---------------------------------------------------------------------------
+  --xy-emotion-happy: #9a6414; // 开心   4.99:1
+  --xy-emotion-excited: #a34e22; // 兴奋   5.72:1
+  --xy-emotion-calm: #2f7d6d; // 平静   4.91:1
+  --xy-emotion-sad: #4a6e9b; // 悲伤   5.25:1
+  --xy-emotion-anxious: #a85822; // 焦虑   5.14:1
+  --xy-emotion-tired: #6e6a8a; // 疲惫   5.13:1
+  --xy-emotion-surprised: #8a5a9e; // 惊讶   5.20:1
+  --xy-emotion-confused: #55707f; // 困惑   5.24:1
+
+  // 渐变（用于 hero / 头部）
+  --xy-gradient-brand: linear-gradient(
+    135deg,
+    var(--xy-primary-600) 0%,
+    var(--xy-primary-400) 100%
+  );
+  --xy-gradient-brand-soft: linear-gradient(
+    135deg,
+    var(--xy-primary-50) 0%,
+    var(--xy-bg-warm) 100%
+  );
+  --xy-gradient-warm: linear-gradient(
+    135deg,
+    var(--xy-accent-50) 0%,
+    #fcf4e6 60%,
+    var(--xy-bg-warm) 100%
+  );
+
+  // ---------------------------------------------------------------------------
+  // 字体 · 中文优先的系统栈（不引外部字体，避免中文子集掉字重/首屏闪烁）
+  // ---------------------------------------------------------------------------
+  --xy-font-sans:
+    'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'PingFang SC',
+    'Hiragino Sans GB', 'Microsoft YaHei', 'Source Han Sans SC',
+    'WenQuanYi Micro Hei', system-ui, sans-serif;
+  --xy-font-mono:
+    'JetBrains Mono', 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
+
+  --xy-text-xs: 12px;
+  --xy-text-sm: 13px;
+  --xy-text-base: 14px;
+  --xy-text-md: 16px; // 最小正文尺寸
+  --xy-text-lg: 18px;
+  --xy-text-xl: 22px;
+  --xy-text-2xl: 28px;
+  --xy-text-3xl: 34px;
+  --xy-text-4xl: 44px;
+
+  --xy-leading-tight: 1.25;
+  --xy-leading-normal: 1.6;
+  --xy-leading-relaxed: 1.8;
+
+  // ---------------------------------------------------------------------------
+  // 间距（4px 基准）
+  // ---------------------------------------------------------------------------
+  --xy-space-1: 4px;
+  --xy-space-2: 8px;
+  --xy-space-3: 12px;
+  --xy-space-4: 16px;
+  --xy-space-5: 20px;
+  --xy-space-6: 24px;
+  --xy-space-8: 32px;
+  --xy-space-10: 40px;
+  --xy-space-12: 48px;
+  --xy-space-16: 64px;
+  --xy-space-20: 80px;
+
+  // ---------------------------------------------------------------------------
+  // 圆角 / 阴影（阴影统一带青绿灰调，避免纯黑投影的浑浊感）
+  // ---------------------------------------------------------------------------
+  --xy-radius-xs: 6px;
+  --xy-radius-sm: 8px;
+  --xy-radius-md: 12px;
+  --xy-radius-lg: 16px;
+  --xy-radius-xl: 20px;
+  --xy-radius-2xl: 28px;
+  --xy-radius-full: 999px;
+
+  --xy-shadow-xs: 0 1px 2px rgba(27, 38, 36, 0.05);
+  --xy-shadow-sm: 0 2px 8px rgba(27, 38, 36, 0.06);
+  --xy-shadow-md: 0 6px 20px rgba(27, 38, 36, 0.08);
+  --xy-shadow-lg: 0 16px 40px rgba(27, 38, 36, 0.1);
+  --xy-shadow-brand: 0 8px 24px rgba(47, 125, 109, 0.18);
+
+  // ---------------------------------------------------------------------------
+  // 动效（150–300ms；空间连续性；尊重 prefers-reduced-motion）
+  // ---------------------------------------------------------------------------
+  --xy-dur-fast: 150ms;
+  --xy-dur: 220ms;
+  --xy-dur-slow: 320ms;
+  --xy-ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --xy-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+
+  // ---------------------------------------------------------------------------
+  // 层级
+  // ---------------------------------------------------------------------------
+  --xy-z-nav: 100;
+  --xy-z-drawer: 200;
+  --xy-z-toast: 300;
+
+  // ---------------------------------------------------------------------------
+  // 兼容别名：让 Element Plus 变量直接吃到品牌色
+  // ---------------------------------------------------------------------------
+  --el-color-primary: var(--xy-primary-500);
+  --el-color-primary-light-3: var(--xy-primary-400);
+  --el-color-primary-light-5: var(--xy-primary-300);
+  --el-color-primary-light-7: var(--xy-primary-200);
+  --el-color-primary-light-8: var(--xy-primary-100);
+  --el-color-primary-light-9: var(--xy-primary-50);
+  --el-color-primary-dark-2: var(--xy-primary-600);
+  --el-color-success: var(--xy-success);
+  --el-color-warning: var(--xy-warning);
+  --el-color-danger: var(--xy-danger);
+  --el-color-error: var(--xy-danger);
+  --el-color-info: var(--xy-info);
+  --el-text-color-primary: var(--xy-ink-900);
+  --el-text-color-regular: var(--xy-ink-700);
+  --el-text-color-secondary: var(--xy-ink-500);
+  --el-text-color-placeholder: var(--xy-ink-400);
+  --el-border-color: var(--xy-border-strong);
+  --el-border-color-light: var(--xy-border);
+  --el-border-color-lighter: var(--xy-border);
+  --el-fill-color-blank: var(--xy-surface);
+  --el-fill-color-light: var(--xy-surface-alt);
+  --el-bg-color: var(--xy-surface);
+  --el-bg-color-page: var(--xy-bg);
+  --el-border-radius-base: var(--xy-radius-sm);
+  --el-border-radius-small: var(--xy-radius-xs);
+  --el-font-family: var(--xy-font-sans);
+  --el-font-size-base: var(--xy-text-base);
+}

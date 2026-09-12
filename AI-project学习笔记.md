@@ -2535,11 +2535,11 @@ handleChange(page) 的作用是记录当前页并重新查询。
 模板三层结构：
 
 1. **侧边栏（sidebar）**：
-   - AI 助手信息卡：呼吸动画圆圈 + 机器人头像 + "宁渡AI助手"名称 + 在线状态指示器
+   - AI 助手信息卡：呼吸动画圆圈 + 机器人头像 + "心耘AI助手"名称 + 在线状态指示器
    - （后续可扩展会话历史列表、情绪花园等区块）
 
 2. **聊天主区域（chat-main）**：
-   - 聊天头部：头像 + "宁渡AI助手"标题 + 描述语 + 新建会话按钮
+   - 聊天头部：头像 + "心耘AI助手"标题 + 描述语 + 新建会话按钮
    - 聊天消息区：欢迎消息（空状态引导）+（后续消息列表）
    - 消息输入区：`el-input` textarea + 发送按钮
 
@@ -2989,7 +2989,7 @@ const startNewSession = (message) => {
     initialMessage: message,
   };
   if (currentSession.value.sessionTitle === "新对话") {
-    sessionParams.sessionTitle = `宁渡AI助手 -${new Date().toLocaleString()}`;
+    sessionParams.sessionTitle = `心耘AI助手 -${new Date().toLocaleString()}`;
   } else {
     sessionParams.sessionTitle = currentSession.value.sessionTitle;
   }

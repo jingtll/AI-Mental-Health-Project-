@@ -1,4 +1,4 @@
-# 心理健康 AI 助手（前端）
+# 心耘 · 心灵耕耘（AI 心理陪伴前端）
 
 面向个人用户的 **心理健康 AI 陪伴与自助** 前端应用：用 AI 流式对话做情绪疏导，用情绪日记做日常记录，并用知识库提供心理科普内容；同时提供管理端做内容运营与数据分析。
 
@@ -13,7 +13,7 @@
 | 模块 | 说明 |
 |------|------|
 | **首页** | 品牌介绍与入口引导（开始倾诉 / 记录心情） |
-| **AI 咨询** | 与「宁渡AI助手」多轮对话；SSE 流式回复；会话列表、新建会话、删除会话；侧边**情绪花园**展示当前会话的主要情绪、评分、风险等级与建议 |
+| **AI 咨询** | 与「心耘AI助手」多轮对话；SSE 流式回复；会话列表、新建会话、删除会话；侧边**情绪花园**展示当前会话的主要情绪、评分、风险等级与建议 |
 | **情绪日记** | 按日填写：情绪评分（1–10）、主要情绪（开心/平静/焦虑等）、触发因素、今日感想、睡眠质量、压力水平 |
 | **知识库** | 推荐阅读 + 文章列表（封面、分类、作者、阅读量、发布时间）；文章详情支持摘要、正文、标签 |
 | **登录 / 注册** | 普通用户账号；登录后按角色进入前台或后台 |
@@ -80,6 +80,26 @@
 
 ---
 
+## 品牌与设计系统
+
+**品牌**：心耘 · 心灵耕耘。视觉方向「温润心田」—— 青绿主色（耕耘、生长）+ 暖砂强调（情绪、提示）+ 纸白底。
+
+品牌名、全称、助手名等集中在 `src/config/index.ts` 的 `brand` 常量，界面通过 `<BrandLogo />` 渲染，不散落在各页面。
+
+| 令牌组 | 说明 |
+|--------|------|
+| `--xy-primary-*` | 品牌青绿十档色阶。`-500` 为交互主色（白字对比度 4.91:1）；`-400` 是原品牌色，对比度 4.1:1，**仅用于渐变与大色块** |
+| `--xy-accent-*` | 暖砂强调色，用于情绪与提示，克制使用 |
+| `--xy-ink-*` / `--xy-surface*` / `--xy-border*` | 中性文字、容器与边框，带极轻青绿灰调 |
+| `--xy-risk-0..3` | 风险等级四级色阶（正常 / 关注 / 预警 / 危机），前后台共用 |
+| `--xy-emotion-*` | 8 种主要情绪色，全部 ≥4.5:1，替代原先白底不可读的亮色系 |
+| `--xy-space-*` / `--xy-radius-*` / `--xy-shadow-*` | 4px 基准间距、圆角与低饱和投影 |
+| `--xy-dur-*` / `--xy-ease*` | 150–320ms 动效时长与缓动；`prefers-reduced-motion` 下自动降级 |
+
+所有令牌在 `src/styles/_tokens.scss` 中定义并已验算对比度（注释里记录了每个色值的比值）；`_element.scss` 通过 `--el-*` 变量把 Element Plus 一并换肤。全局关键帧统一 `xy-` 前缀定义在 `_keyframes.scss`。
+
+---
+
 ## 快速开始
 
 **环境**：Node.js **24+**，使用 **npm**（仓库含 `package-lock.json`）。
@@ -120,16 +140,27 @@ npm run preview
 
 ```text
 src/
-  main.ts                 # 入口：Element Plus、全量图标、Pinia、Router
-  router/index.ts         # 路由与登录守卫
+  main.ts                 # 入口：Element Plus、全量图标、Pinia、Router、全局样式
+  router/index.ts         # 路由、登录守卫、切换路由回到顶部
   api/
     frontend.ts           # 用户端接口
     admin.ts              # 管理端接口 + 登录
-  utils/request.ts        # axios 实例与拦截器（拆包 data.data）
-  config/index.ts         # fileBaseUrl（封面等文件绝对地址前缀）
+  utils/
+    request.ts            # axios 实例与拦截器（拆包 data.data）
+    session.ts            # 登录态读写唯一入口（token / userInfo）
+    format.ts             # 日期时间与时长格式化（空值安全）
+    emotion.ts            # 情绪 / 风险映射与情绪色板唯一来源
+  styles/
+    _tokens.scss          # 设计令牌（颜色 / 字体 / 间距 / 圆角 / 阴影 / 动效）
+    _base.scss            # 全局基础层与工具类（.xy-card / .xy-empty / .xy-skeleton）
+    _keyframes.scss       # 全局关键帧（含 prefers-reduced-motion 兜底）
+    _element.scss         # Element Plus 主题覆盖
+    index.scss            # 样式汇总入口（仅 main.ts 引入一次）
+  config/index.ts         # fileBaseUrl + brand 品牌常量
   types/                  # ApiResponse / 会话 / 情绪等共享类型
   stores/admin.ts         # 后台侧栏折叠
   components/             # 布局壳与通用组件
+    consult/              # AI 咨询页的展示组件（情绪花园 / 会话列表）
   views/                  # 全部页面（前台 + /back）
 docs/superpowers/         # 设计文档与实施计划
 .github/workflows/ci.yml  # CI
