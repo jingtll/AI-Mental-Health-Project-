@@ -1,9 +1,47 @@
 <script setup lang="ts">
+/**
+ * 情绪日志（后台）
+ *
+ * 相对改造前修了什么（逐条对应）：
+ *  1. 表头 label 与 prop 严重错配：「用户ID」对应 `id`、「会话ID」对应 `moodScore`
+ *     （单元格内容却是头像）、「情绪评分」和「生活指标」两列都标着 `createdAt`
+ *     → 逐列纠正：记录ID→`id`、用户→`nickname`（头像）、情绪评分→`moodScore`、
+ *     生活指标列去掉 prop（一格同时展示睡眠与压力）。
+ *  2. 生活指标读 `row.sleep`，详情弹窗读 `currentDetail.sleepQuality`，同一语义两个字段名
+ *     → 统一走 `readSleepQuality()` 做兼容读取（详见该函数注释）。
+ *  3. 详情弹窗的 `createdAt` / `updatedAt` 直接渲染原始 ISO 串 → 改用 `formatDateTime`。
+ *  4. 文件内重复定义了一份 `getEmotionTagType` / `getAiEmotionTagType` /
+ *     `getEmotionScoreColor` / `getRiskLevelTagType` / `getRiskLevelText` 与本地 `EpTagType`
+ *     （且颜色是 #f56c6c / #67c23a 等 Element 默认色）→ 全部删除，改为从 `@/utils/emotion`
+ *     导入，颜色由设计令牌统一给出。
+ *  5. 死样式：`.ai-analysis-status` / `.keywords-container` / `.analysis-time` /
+ *     `.ai-analysis-meta` 在模板里完全不存在 → 删除；`.suggestion-content` / `.risk-content`
+ *     的裸色 `#f8f9fa` `#ebeef5` `#606266` `#909399` → 改令牌；
+ *     `.el-progress__text` 那条带 `!important` 的规则在 scoped 下从未命中（子组件内部元素）
+ *     → 一并删除。
+ *  6. `el-table` 情绪评分列的 `width="auto"` 不是合法值 → 改为具体宽度。
+ *  7. 表格与分页没有 loading、窄屏会被 8 列撑破、空表格无引导
+ *     → `v-loading` + `.table-scroll` 横向滚动容器 + `#empty` 插槽。
+ *  8. 详情弹窗 `width="800px"` 在窄屏溢出 → `min(800px, 92vw)`；`PageHead` 补 `subtitle`。
+ *  9. 情绪性质标签改为 `getPolarityTagType()`，颜色 + 文字双维度表达，不再只靠颜色。
+ *
+ * 注：`handleSearch` 的 `{...pagination, ...formData}` 展开顺序与 `moodScreRange`
+ * （接口约定的拼写）一律保持原样。
+ */
 import { ref, reactive, onMounted } from "vue";
 import PageHead from "@/components/PageHead.vue";
 import TableSearch from "@/components/TableSearch.vue";
 import type { SearchFormItem } from "@/components/TableSearch.vue";
 import { getEmotionalPage, deleteEmotional } from "@/api/admin";
+import { formatDate, formatDateTime } from "@/utils/format";
+import {
+  getAiEmotionTagType,
+  getEmotionScoreColor,
+  getEmotionTagType,
+  getRiskLevelTagType,
+  getRiskLevelText,
+} from "@/utils/emotion";
+import type { EpTagType } from "@/utils/emotion";
 import { ElMessageBox, ElMessage } from "element-plus";
 
 interface EmotionalRow {
@@ -25,63 +63,25 @@ interface EmotionalRow {
   [key: string]: unknown;
 }
 
-type EpTagType = "primary" | "success" | "warning" | "info" | "danger";
+/**
+ * 生活指标「睡眠质量」的字段名兼容处理。
+ *
+ * 接口字段名不一致：列表接口返回 `sleep`，详情弹窗原来读的是 `sleepQuality`，
+ * 两者是同一个语义。这里统一按 `sleepQuality ?? sleep` 读取，保证列表与详情显示一致。
+ * 后端统一字段名后，直接删掉本函数、改回单一字段即可。
+ */
+const readSleepQuality = (row: EmotionalRow | null): number | undefined =>
+  row?.sleepQuality ?? row?.sleep;
 
-//情绪映射
-const getEmotionTagType = (emotion?: string): EpTagType => {
-  const emotionTypes: Record<string, EpTagType> = {
-    快乐: "success",
-    平静: "info",
-    兴奋: "warning",
-    愤怒: "danger",
-    悲伤: "info",
-    焦虑: "warning",
-  };
-  return (emotion && emotionTypes[emotion]) || "info";
+/** 头像只放昵称首字，避免长昵称把圆形头像撑破 */
+const avatarInitial = (nickname?: string): string => {
+  const text = (nickname ?? "").trim();
+  return text.length > 0 ? text.slice(0, 1) : "匿";
 };
 
-const getAiEmotionTagType = (emotion?: string): EpTagType => {
-  const emotionTagMap: Record<string, EpTagType> = {
-    快乐: "success",
-    平静: "success",
-    兴奋: "warning",
-    满足: "success",
-    愤怒: "danger",
-    悲伤: "info",
-    焦虑: "warning",
-    恐惧: "danger",
-    沮丧: "info",
-    压力: "warning",
-  };
-  return (emotion && emotionTagMap[emotion]) || "info";
-};
-
-const getEmotionScoreColor = (score: number) => {
-  if (score >= 80) return "#f56c6c";
-  if (score >= 60) return "#e6a23c";
-  if (score >= 40) return "#909399";
-  return "#67c23a";
-};
-
-const getRiskLevelTagType = (riskLevel: number | string): EpTagType => {
-  const riskTagMap: Record<string, EpTagType> = {
-    0: "success",
-    1: "info",
-    2: "warning",
-    3: "danger",
-  };
-  return riskTagMap[riskLevel] || "info";
-};
-
-const getRiskLevelText = (riskLevel: number | string) => {
-  const riskTextMap: Record<string, string> = {
-    0: "正常",
-    1: "关注",
-    2: "预警",
-    3: "危机",
-  };
-  return riskTextMap[riskLevel] || "未知风险等级";
-};
+/** 情绪性质标签：文字与颜色一起表达，避免只靠颜色传达状态 */
+const getPolarityTagType = (isNegative: unknown): EpTagType =>
+  isNegative ? "danger" : "success";
 
 const formItem = ref<SearchFormItem[]>([
   {
@@ -111,15 +111,26 @@ const pagination = reactive({
   size: 10,
   total: 0,
 });
+//列表请求状态（驱动 el-table 的 v-loading）
+const loading = ref(false);
 
 const handleSearch = async (formData?: Record<string, unknown>) => {
-  const params = {
-    ...pagination,
-    ...(formData || {}),
-  };
-  const { records, total } = await getEmotionalPage(params);
-  tableData.value = records as EmotionalRow[];
-  pagination.total = total;
+  loading.value = true;
+  try {
+    const params = {
+      ...pagination,
+      ...(formData || {}),
+    };
+    const { records, total } = await getEmotionalPage(params);
+    tableData.value = records as EmotionalRow[];
+    pagination.total = total;
+  } catch {
+    // 请求失败：清空列表并结束 loading，由空状态插槽兜底
+    tableData.value = [];
+    pagination.total = 0;
+  } finally {
+    loading.value = false;
+  }
 };
 
 const handleChange = (page: number) => {
@@ -170,77 +181,109 @@ onMounted(() => {
 </script>
 
 <template>
-  <div>
-    <PageHead title="情绪日志" />
+  <div class="emotional-page">
+    <PageHead
+      title="情绪日志"
+      subtitle="汇总用户提交的情绪日记与 AI 分析结果，可按用户或评分区间筛选、查看详情。"
+    />
     <TableSearch :formItem="formItem" @search="handleSearch" />
-    <el-table :data="tableData" style="width: 100%">
-      <el-table-column prop="id" label="用户ID" width="80px" />
-
-      <el-table-column prop="moodScore" label="会话ID" width="80px">
-        <template #default="scope">
-          <el-avatar>{{ scope.row.nickname }}</el-avatar>
-        </template>
-      </el-table-column>
-      <el-table-column prop="diaryDate" label="记录日期" width="120px" />
-      <el-table-column prop="createdAt" label="情绪评分" width="auto">
-        <template #default="scope">
-          <el-rate :model-value="scope.row.moodScore" :max="10" disabled />
-        </template>
-      </el-table-column>
-      <el-table-column prop="createdAt" label="生活指标" width="120px">
-        <template #default="scope">
-          <div>
-            <p>睡眠：{{ scope.row.sleep }}/5</p>
-            <p>压力：{{ scope.row.stressLevel }}/5</p>
+    <div class="table-scroll">
+      <el-table v-loading="loading" :data="tableData">
+        <el-table-column prop="id" label="记录ID" width="100" />
+        <el-table-column label="用户" width="180">
+          <template #default="scope">
+            <div class="user-cell">
+              <el-avatar :size="32">{{ avatarInitial(scope.row.nickname) }}</el-avatar>
+              <span class="user-cell__name" :title="scope.row.nickname">
+                {{ scope.row.nickname || "匿名用户" }}
+              </span>
+            </div>
+          </template>
+        </el-table-column>
+        <el-table-column label="记录日期" width="130">
+          <template #default="scope">
+            {{ formatDate(scope.row.diaryDate) }}
+          </template>
+        </el-table-column>
+        <el-table-column label="情绪评分" width="210">
+          <template #default="scope">
+            <div class="score-cell">
+              <el-rate :model-value="scope.row.moodScore" :max="10" disabled />
+              <span class="score-cell__text">
+                {{ scope.row.moodScore ?? "—" }}/10
+              </span>
+            </div>
+          </template>
+        </el-table-column>
+        <el-table-column label="生活指标" width="140">
+          <template #default="scope">
+            <div class="metric-cell">
+              <p>睡眠：{{ readSleepQuality(scope.row) ?? "—" }}/5</p>
+              <p>压力：{{ scope.row.stressLevel ?? "—" }}/5</p>
+            </div>
+          </template>
+        </el-table-column>
+        <el-table-column
+          prop="emotionTriggers"
+          label="情绪触发因素"
+          width="160"
+          show-overflow-tooltip
+        />
+        <el-table-column label="日记内容" min-width="220">
+          <template #default="scope">
+            <span class="xy-truncate-2">{{ scope.row.diaryContent || "—" }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" width="160" fixed="right">
+          <template #default="scope">
+            <el-button text type="primary" @click="viewSessionDetail(scope.row)">
+              详情
+            </el-button>
+            <el-button text type="danger" @click="handleDelete(scope.row)">
+              删除
+            </el-button>
+          </template>
+        </el-table-column>
+        <template #empty>
+          <div class="xy-empty">
+            <el-icon class="xy-empty__icon"><Notebook /></el-icon>
+            <p class="xy-empty__text">
+              还没有情绪日志<br />用户提交情绪日记后会在这里汇总
+            </p>
           </div>
         </template>
-      </el-table-column>
-      <el-table-column
-        prop="emotionTriggers"
-        label="情绪触发因素"
-        width="120px"
+      </el-table>
+    </div>
+    <div class="table-pager">
+      <el-pagination
+        :page-size="pagination.size"
+        layout="prev,pager,next"
+        :total="pagination.total"
+        @change="handleChange"
       />
-      <el-table-column prop="diaryContent" label="日记内容" width="250px" />
-      <el-table-column label="操作" width="240px" fixed="right">
-        <template #default="scope">
-          <el-button text type="primary" @click="viewSessionDetail(scope.row)"
-            >详情</el-button
-          >
-          <el-button text type="danger" @click="handleDelete(scope.row)"
-            >删除</el-button
-          >
-        </template>
-      </el-table-column>
-    </el-table>
-    <el-pagination
-      style="margin-top: 25px"
-      :page-size="pagination.size"
-      layout="prev,pager,next"
-      :total="pagination.total"
-      @change="handleChange"
-    />
+    </div>
     <el-dialog
       v-model="detailDialogVisible"
       title="情绪日志详情"
-      width="800px"
+      width="min(800px, 92vw)"
       :close-on-click-modal="false"
     >
       <div class="detail-content" v-if="currentDetail">
         <div class="detail-section">
           <h4>用户信息</h4>
           <el-descriptions :column="2" border>
-            <el-descriptions-item label="用户名">{{
-              currentDetail.username
-            }}</el-descriptions-item>
-            <el-descriptions-item label="昵称">{{
-              currentDetail.nickname
-            }}</el-descriptions-item>
-            <el-descriptions-item label="用户ID">{{
-              currentDetail.userId
-            }}</el-descriptions-item>
-            <el-descriptions-item label="记录日期">{{
-              currentDetail.diaryDate
-            }}</el-descriptions-item>
+            <el-descriptions-item label="用户名">
+              {{ currentDetail.username || "—" }}
+            </el-descriptions-item>
+            <el-descriptions-item label="昵称">
+              {{ currentDetail.nickname || "—" }}
+            </el-descriptions-item>
+            <el-descriptions-item label="用户ID">
+              {{ currentDetail.userId ?? "—" }}
+            </el-descriptions-item>
+            <el-descriptions-item label="记录日期">
+              {{ formatDate(currentDetail.diaryDate) }}
+            </el-descriptions-item>
           </el-descriptions>
         </div>
         <div class="detail-section">
@@ -255,15 +298,15 @@ onMounted(() => {
             </el-descriptions-item>
             <el-descriptions-item label="主要情绪">
               <el-tag :type="getEmotionTagType(currentDetail.dominantEmotion)">
-                {{ currentDetail.dominantEmotion || "-" }}
+                {{ currentDetail.dominantEmotion || "—" }}
               </el-tag>
             </el-descriptions-item>
-            <el-descriptions-item label="睡眠质量"
-              >{{ currentDetail.sleepQuality || "-" }}/5</el-descriptions-item
-            >
-            <el-descriptions-item label="压力水平"
-              >{{ currentDetail.stressLevel || "-" }}/5</el-descriptions-item
-            >
+            <el-descriptions-item label="睡眠质量">
+              {{ readSleepQuality(currentDetail) ?? "—" }}/5
+            </el-descriptions-item>
+            <el-descriptions-item label="压力水平">
+              {{ currentDetail.stressLevel ?? "—" }}/5
+            </el-descriptions-item>
           </el-descriptions>
         </div>
         <div class="detail-section">
@@ -285,7 +328,7 @@ onMounted(() => {
                 <el-tag
                   :type="getAiEmotionTagType(String(aiData?.primaryEmotion || ''))"
                 >
-                  {{ aiData?.primaryEmotion || "-" }}
+                  {{ aiData?.primaryEmotion || "—" }}
                 </el-tag>
               </el-descriptions-item>
               <el-descriptions-item label="情绪强度">
@@ -305,7 +348,7 @@ onMounted(() => {
                 </el-tag>
               </el-descriptions-item>
               <el-descriptions-item label="情绪性质">
-                <el-tag :type="aiData?.isNegative ? 'danger' : 'success'">
+                <el-tag :type="getPolarityTagType(aiData?.isNegative)">
                   {{ aiData?.isNegative ? "负面情绪" : "正面情绪" }}
                 </el-tag>
               </el-descriptions-item>
@@ -342,12 +385,12 @@ onMounted(() => {
         <div class="detail-section">
           <h4>时间信息</h4>
           <el-descriptions :column="2" border>
-            <el-descriptions-item label="创建时间">{{
-              currentDetail.createdAt
-            }}</el-descriptions-item>
-            <el-descriptions-item label="更新时间">{{
-              currentDetail.updatedAt
-            }}</el-descriptions-item>
+            <el-descriptions-item label="创建时间">
+              {{ formatDateTime(currentDetail.createdAt) }}
+            </el-descriptions-item>
+            <el-descriptions-item label="更新时间">
+              {{ formatDateTime(currentDetail.updatedAt) }}
+            </el-descriptions-item>
           </el-descriptions>
         </div>
       </div>
@@ -359,115 +402,122 @@ onMounted(() => {
 </template>
 
 <style lang="scss" scoped>
-.detail-content {
-  .detail-section {
-    margin-bottom: 24px;
+.emotional-page {
+  .table-scroll {
+    // 窄屏横向滚动兜底：el-table 列宽总和超出容器时自身会横向滚动（带固定列），
+    // 这里再包一层，确保表格永远不会把卡片撑破
+    overflow-x: auto;
 
-    h4 {
-      margin: 0 0 16px 0;
-      color: #303133;
-      font-size: 16px;
-
-      i {
-        margin-right: 8px;
-        color: #409eff;
-      }
-    }
-  }
-}
-
-// AI分析相关样式
-.ai-analysis-status {
-  .ai-status-tag {
-    margin-bottom: 4px;
-
-    i {
-      margin-right: 4px;
+    :deep(.el-table) {
+      width: 100%;
     }
   }
 
-  .ai-analysis-preview {
-    font-size: 11px;
-    color: #909399;
-    margin-top: 2px;
-  }
-}
-
-.ai-analysis-result {
-  .ai-keywords-section,
-  .ai-suggestion-section,
-  .ai-risk-section,
-  .ai-improvements-section {
-    margin-top: 16px;
-    padding: 12px;
-    background-color: #f8f9fa;
-    border-radius: 4px;
-
-    h5 {
-      margin: 0 0 8px 0;
-      color: #606266;
-      font-size: 14px;
-      font-weight: 600;
-
-      i {
-        margin-right: 6px;
-        color: #909399;
-      }
-    }
-  }
-
-  .keywords-container {
+  .table-pager {
     display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
+    justify-content: flex-end;
+    margin-top: var(--xy-space-5);
+    overflow-x: auto;
 
-    .keyword-tag {
-      background-color: #e1f3d8;
-      color: #67c23a;
-      border-color: #b3d8a4;
+    :deep(.el-pagination) {
+      flex-wrap: wrap;
+      justify-content: flex-end;
     }
   }
 
-  .suggestion-content,
-  .risk-content {
-    line-height: 1.6;
-    color: #606266;
-    background-color: white;
-    padding: 8px;
-    border-radius: 4px;
-    border: 1px solid #ebeef5;
-  }
+  .user-cell {
+    display: flex;
+    align-items: center;
+    gap: var(--xy-space-2);
+    min-width: 0;
 
-  .improvement-list {
-    margin: 0;
-    padding-left: 20px;
+    .el-avatar {
+      flex-shrink: 0;
+      background: var(--xy-primary-100);
+      color: var(--xy-primary-700);
+      font-weight: 600;
+    }
 
-    li {
-      margin-bottom: 4px;
-      color: #606266;
-      line-height: 1.5;
+    &__name {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: var(--xy-ink-900);
     }
   }
 
-  .ai-analysis-meta {
-    margin-top: 16px;
-    padding-top: 12px;
-    border-top: 1px solid #ebeef5;
+  .score-cell {
+    display: flex;
+    align-items: center;
+    gap: var(--xy-space-2);
 
-    .analysis-time {
-      margin: 0;
-      font-size: 12px;
-      color: #909399;
+    &__text {
+      flex-shrink: 0;
+      font-size: var(--xy-text-xs);
+      color: var(--xy-ink-500);
+    }
+  }
 
-      i {
-        margin-right: 4px;
+  .metric-cell {
+    font-size: var(--xy-text-sm);
+    line-height: var(--xy-leading-normal);
+    color: var(--xy-ink-700);
+  }
+
+  .detail-content {
+    .detail-section {
+      margin-bottom: var(--xy-space-6);
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+
+      h4 {
+        margin: 0 0 var(--xy-space-4);
+        font-size: var(--xy-text-md);
+        font-weight: 600;
+        color: var(--xy-ink-900);
       }
     }
   }
 
-  .el-progress {
-    .el-progress__text {
-      font-size: 12px !important;
+  // AI 分析结果分区
+  .ai-analysis-result {
+    .ai-suggestion-section,
+    .ai-risk-section,
+    .ai-improvements-section {
+      margin-top: var(--xy-space-4);
+      padding: var(--xy-space-3);
+      background: var(--xy-surface-alt);
+      border-radius: var(--xy-radius-sm);
+
+      h5 {
+        margin: 0 0 var(--xy-space-2);
+        font-size: var(--xy-text-base);
+        font-weight: 600;
+        color: var(--xy-ink-700);
+      }
+    }
+
+    .suggestion-content,
+    .risk-content {
+      padding: var(--xy-space-3);
+      background: var(--xy-surface);
+      border: 1px solid var(--xy-border);
+      border-radius: var(--xy-radius-sm);
+      line-height: var(--xy-leading-normal);
+      color: var(--xy-ink-700);
+    }
+
+    .improvement-list {
+      margin: 0;
+      padding-left: var(--xy-space-5);
+
+      li {
+        margin-bottom: var(--xy-space-1);
+        line-height: var(--xy-leading-normal);
+        color: var(--xy-ink-700);
+      }
     }
   }
 }

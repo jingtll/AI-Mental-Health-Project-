@@ -1,0 +1,346 @@
+// =============================================================================
+// 心耘 · Element Plus 主题覆盖
+//
+// 项目用 `element-plus/dist/index.css`（非 SCSS 源码主题），因此统一通过
+// CSS 变量（见 _tokens.scss 末尾的 --el-* 映射）+ 少量结构覆盖来换肤。
+// 原则：只改「观感与可用性」，不改组件行为与对外 props。
+// =============================================================================
+
+// -----------------------------------------------------------------------------
+// 按钮：默认高度提升到 36px（原 32px 偏小），大号 46px 满足 44px 触控目标
+// -----------------------------------------------------------------------------
+.el-button {
+  --el-button-font-weight: 500;
+  min-height: 36px;
+  padding: 8px 16px;
+  border-radius: var(--xy-radius-sm);
+  transition:
+    background-color var(--xy-dur-fast) var(--xy-ease),
+    border-color var(--xy-dur-fast) var(--xy-ease),
+    color var(--xy-dur-fast) var(--xy-ease),
+    box-shadow var(--xy-dur-fast) var(--xy-ease),
+    transform var(--xy-dur-fast) var(--xy-ease);
+}
+
+.el-button:not(.is-disabled, .is-text, .is-link):active {
+  transform: translateY(1px);
+}
+
+.el-button--large {
+  min-height: 46px;
+  padding: 12px 24px;
+  border-radius: var(--xy-radius-md);
+  font-size: var(--xy-text-md);
+}
+
+.el-button--small {
+  min-height: 30px;
+  padding: 6px 12px;
+}
+
+// 主按钮：品牌渐变 + 品牌色投影
+.el-button--primary:not(.is-text, .is-link, .is-plain) {
+  background: var(--xy-primary-500);
+  border-color: var(--xy-primary-500);
+  box-shadow: 0 2px 8px rgba(47, 125, 109, 0.2);
+
+  &:hover,
+  &:focus {
+    background: var(--xy-primary-600);
+    border-color: var(--xy-primary-600);
+    box-shadow: var(--xy-shadow-brand);
+  }
+}
+
+// 文字按钮保留可点区域的垂直间距
+.el-button.is-text {
+  padding: 6px 8px;
+  min-height: 32px;
+}
+
+// -----------------------------------------------------------------------------
+// 输入类：圆角与品牌色聚焦环
+// -----------------------------------------------------------------------------
+.el-input__wrapper,
+.el-textarea__inner {
+  border-radius: var(--xy-radius-sm);
+  transition:
+    box-shadow var(--xy-dur-fast) var(--xy-ease),
+    background-color var(--xy-dur-fast) var(--xy-ease);
+}
+
+.el-input__wrapper {
+  padding: 4px 12px;
+}
+
+.el-input--large .el-input__wrapper {
+  padding: 8px 14px;
+  border-radius: var(--xy-radius-md);
+}
+
+.el-input__wrapper.is-focus,
+.el-textarea__inner:focus {
+  box-shadow:
+    0 0 0 1px var(--xy-primary-400) inset,
+    0 0 0 3px var(--xy-primary-100);
+}
+
+.el-textarea__inner {
+  padding: 10px 12px;
+  line-height: var(--xy-leading-normal);
+}
+
+.el-form-item__label {
+  color: var(--xy-ink-700);
+  font-weight: 500;
+}
+
+.el-form-item__error {
+  padding-top: 4px;
+  font-size: var(--xy-text-xs);
+}
+
+// -----------------------------------------------------------------------------
+// 卡片
+// -----------------------------------------------------------------------------
+.el-card {
+  border: 1px solid var(--xy-border);
+  border-radius: var(--xy-radius-lg);
+  box-shadow: var(--xy-shadow-sm);
+  overflow: hidden;
+
+  .el-card__header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--xy-border);
+    background: var(--xy-surface);
+  }
+
+  .el-card__body {
+    padding: 20px;
+  }
+}
+
+// -----------------------------------------------------------------------------
+// 标签
+// -----------------------------------------------------------------------------
+.el-tag {
+  border-radius: var(--xy-radius-full);
+  padding: 0 10px;
+  font-weight: 500;
+  border-color: transparent;
+}
+
+// -----------------------------------------------------------------------------
+// 表格（后台三张列表页 + 情绪日志）
+// -----------------------------------------------------------------------------
+.el-table {
+  --el-table-border-color: var(--xy-border);
+  --el-table-header-bg-color: var(--xy-surface-alt);
+  --el-table-header-text-color: var(--xy-ink-700);
+  --el-table-row-hover-bg-color: var(--xy-primary-50);
+  font-size: var(--xy-text-base);
+  border-radius: var(--xy-radius-md);
+
+  th.el-table__cell {
+    padding: 12px 0;
+    font-weight: 600;
+  }
+
+  td.el-table__cell {
+    padding: 12px 0;
+  }
+
+  .el-table__inner-wrapper::before {
+    background-color: var(--xy-border);
+  }
+}
+
+// 窄屏表格：横向滚动而不是撑破视口
+.el-table__body-wrapper {
+  overflow-x: auto;
+}
+
+// -----------------------------------------------------------------------------
+// 分页
+// -----------------------------------------------------------------------------
+.el-pagination {
+  --el-pagination-button-bg-color: transparent;
+  gap: var(--xy-space-1);
+  justify-content: flex-end;
+
+  .el-pager li,
+  .btn-prev,
+  .btn-next {
+    min-width: 34px;
+    height: 34px;
+    border-radius: var(--xy-radius-sm);
+    font-weight: 500;
+  }
+
+  .el-pager li.is-active {
+    background: var(--xy-primary-500);
+    color: #fff;
+  }
+
+  .el-pager li:not(.is-active):hover {
+    background: var(--xy-primary-50);
+    color: var(--xy-primary-600);
+  }
+}
+
+// -----------------------------------------------------------------------------
+// 弹窗 / 消息
+// -----------------------------------------------------------------------------
+.el-dialog {
+  border-radius: var(--xy-radius-lg);
+  overflow: hidden;
+  box-shadow: var(--xy-shadow-lg);
+
+  .el-dialog__header {
+    margin: 0;
+    padding: 18px 24px;
+    border-bottom: 1px solid var(--xy-border);
+    background: var(--xy-surface-alt);
+  }
+
+  .el-dialog__title {
+    font-size: var(--xy-text-md);
+    font-weight: 600;
+    color: var(--xy-ink-900);
+  }
+
+  .el-dialog__body {
+    padding: 24px;
+  }
+
+  .el-dialog__footer {
+    padding: 16px 24px;
+    border-top: 1px solid var(--xy-border);
+  }
+}
+
+.el-message-box {
+  border-radius: var(--xy-radius-lg);
+  padding: 20px;
+}
+
+.el-message {
+  border-radius: var(--xy-radius-md);
+  box-shadow: var(--xy-shadow-md);
+}
+
+// -----------------------------------------------------------------------------
+// 侧边菜单（后台）
+// -----------------------------------------------------------------------------
+.el-menu {
+  --el-menu-bg-color: transparent;
+  --el-menu-hover-bg-color: var(--xy-primary-50);
+  --el-menu-active-color: var(--xy-primary-600);
+  --el-menu-text-color: var(--xy-ink-700);
+  border-right: none;
+
+  .el-menu-item {
+    height: 46px;
+    margin: 4px 8px;
+    border-radius: var(--xy-radius-sm);
+    font-size: var(--xy-text-base);
+    transition:
+      background-color var(--xy-dur-fast) var(--xy-ease),
+      color var(--xy-dur-fast) var(--xy-ease);
+
+    &.is-active {
+      background: var(--xy-primary-50);
+      font-weight: 600;
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
+// 其余零散组件
+// -----------------------------------------------------------------------------
+.el-rate {
+  --el-rate-fill-color: var(--xy-accent-400);
+  --el-rate-void-color: var(--xy-ink-200);
+}
+
+.el-rate__text {
+  color: var(--xy-ink-700);
+  font-size: var(--xy-text-base);
+}
+
+.el-descriptions {
+  --el-descriptions-item-bordered-label-background: var(--xy-surface-alt);
+
+  .el-descriptions__label {
+    color: var(--xy-ink-500);
+    font-weight: 500;
+  }
+
+  .el-descriptions__content {
+    color: var(--xy-ink-900);
+  }
+}
+
+.el-avatar {
+  background: var(--xy-primary-100);
+  color: var(--xy-primary-700);
+  font-weight: 600;
+}
+
+.el-loading-mask {
+  background-color: rgba(246, 249, 248, 0.8);
+}
+
+.el-loading-spinner .path {
+  stroke: var(--xy-primary-500);
+}
+
+.el-select-dropdown__item.is-selected {
+  color: var(--xy-primary-600);
+  font-weight: 600;
+}
+
+.el-dropdown-menu__item:not(.is-disabled):focus {
+  background: var(--xy-primary-50);
+  color: var(--xy-primary-600);
+}
+
+.el-progress-bar__inner {
+  border-radius: var(--xy-radius-full);
+}
+
+.el-popper.is-light {
+  border-radius: var(--xy-radius-md);
+  box-shadow: var(--xy-shadow-md);
+}
+
+// -----------------------------------------------------------------------------
+// 触屏尺寸（≤900px）：Element Plus 默认输入框 32px、按钮 36px 都低于 44px
+// 触控目标。桌面保留紧凑密度，触屏统一抬到 44px。
+// 纯文字按钮（表格行内操作）排除在外，避免把表格行高撑得过大。
+// -----------------------------------------------------------------------------
+@media (max-width: 900px) {
+  .el-input__wrapper,
+  .el-select__wrapper {
+    min-height: 44px;
+  }
+
+  .el-button:not(.is-text, .is-link) {
+    min-height: 44px;
+  }
+
+  .el-pagination .el-pager li,
+  .el-pagination .btn-prev,
+  .el-pagination .btn-next {
+    min-width: 44px;
+    height: 44px;
+  }
+
+  // 弹窗宽度：页面通过 width prop（如 width="800px"）写在元素的 inline style 上，
+  // 优先级高于样式表里的 --el-dialog-width，所以这里必须用 !important 才能盖住，
+  // 否则后台详情弹窗在窄屏会横向溢出。
+  .el-dialog {
+    width: 92% !important;
+    max-width: 92vw;
+  }
+}

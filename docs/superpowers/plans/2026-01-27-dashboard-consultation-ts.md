@@ -307,7 +307,7 @@ const startNewSession = (message: string) => {
     initialMessage: message,
   }
   if (session.sessionTitle === "新对话") {
-    sessionParams.sessionTitle = `宁渡AI助手 -${new Date().toLocaleString()}`
+    sessionParams.sessionTitle = `心耘AI助手 -${new Date().toLocaleString()}`
   } else {
     sessionParams.sessionTitle = session.sessionTitle
   }
