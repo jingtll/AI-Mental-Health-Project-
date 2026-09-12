@@ -18,7 +18,7 @@
 - **TS 工具链**：`typescript` 锁 **5.x**，`vue-tsc` **2.x**。**禁止升到 TypeScript 7**（当前 `vue-tsc` 无法解析 `./lib/tsc`）。
 - **`strict: true`**。优先补真实类型而不是 `any`；局部 `as` / 收窄必须写清理由。
 - **路径别名**：`@` → `src`。
-- **品牌单一来源**：品牌名「心耘」、全称「心灵耕耘」、助手名「心耘AI助手」只定义在 `src/config/index.ts` 的 `brand`，界面通过 `<BrandLogo />` 渲染。**禁止**硬编码品牌名，**禁止**再出现已废弃的「宁渡」「小暖」「心理健康AI助手」「心理AI助手」。
+- **品牌单一来源**：品牌名「心耘」、全称「心灵耕耘平台」、助手名「心耘AI助手」只定义在 `src/config/index.ts` 的 `brand`，界面通过 `<BrandLogo />` 渲染。**禁止**硬编码品牌名，**禁止**再出现已废弃的「宁渡」「小暖」「心理健康AI助手」「心理AI助手」。
 - **样式走令牌**：颜色 / 间距 / 圆角 / 阴影 / 时长一律用 `var(--xy-*)`（定义在 `src/styles/_tokens.scss`）。**禁止在 SFC 样式里写裸 hex**。例外仅两类：(a) 品牌渐变上的纯白 `#fff`；(b) `<img src="data:image/svg+xml,...">` 里的颜色——data URI 内的 SVG 拿不到页面 CSS，只能用字面值。
 - **关键帧**：全部以 `xy-` 前缀定义在 `src/styles/_keyframes.scss`，引用前必须先定义（本项目历史上出现过引用 4 个未定义动画、全部静默失效的事故）。
 - **无障碍底线**：正文文字对比度 ≥ 4.5:1（令牌里每个色值的比值已验算并写在注释中）、`:focus-visible` 焦点环可见、触屏目标 ≥ 44px、状态不得只靠颜色单一维度传达、尊重 `prefers-reduced-motion`。纯图标按钮必须有 `aria-label`。
@@ -77,7 +77,7 @@
 | `FrontendLayout.vue` 导航 + 页脚 | 心理健康AI助手 | `BrandLogo` + `brand.name` |
 | `Sidebar.vue` | 心理健康AI助手 | `BrandLogo` + `brand.adminSubtitle` |
 | `AuthLayout.vue` | 心理AI助手 | `brand.name` / `brand.fullName` |
-| `index.html` `<title>` | `ai-project` | `心耘 · 心灵耕耘 \| AI 心理陪伴` |
+| `index.html` `<title>` | `ai-project` | `心耘 · 心灵耕耘平台 \| AI 心理陪伴` |
 | `README.md`、`AI-project学习笔记.md`、`docs/.../dashboard-consultation-ts.md` | 宁渡 | 心耘 |
 
 验证：`src/**`、`README.md`、`index.html` 中「宁渡 / 小暖 / 心理健康AI助手 / 心理AI助手」的残留**仅存在于说明注释**（记录「替换了什么」），浏览器实测 33 个组合**零残留**。
