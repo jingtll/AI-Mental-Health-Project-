@@ -8,11 +8,13 @@
  *    在 768px 高的屏幕上会被裁掉且无法滚动 → 改为 min-height + 右区 overflow-y:auto
  *  - 补回缺失的 @keyframes：原先 `.robot` 引用的 breathing 动画全项目未定义
  *  - 窄屏隐藏品牌侧栏，避免一半屏幕被占满
+ *
+ * 左侧品牌区（温层叙事）：
+ *  顶层 BrandLogo → 中层主标语/副句 → 底层三枚价值点；
+ *  不放置 AI 助手主视觉/徽章。
  */
 import { brand } from "@/config"
 import BrandLogo from "@/components/BrandLogo.vue"
-
-const robotUrl = "/AIlogo.png"
 </script>
 
 <template>
@@ -22,23 +24,41 @@ const robotUrl = "/AIlogo.png"
         <span class="brand-panel__glow brand-panel__glow--a" aria-hidden="true" />
         <span class="brand-panel__glow brand-panel__glow--b" aria-hidden="true" />
 
-        <BrandLogo :size="46" :subtitle="brand.fullName" :on-dark="true" to="/" />
+        <!-- 顶层：品牌 -->
+        <div class="brand-panel__top">
+          <BrandLogo :size="52" :subtitle="brand.fullName" :on-dark="true" to="/" />
+        </div>
 
-        <div class="brand-panel__body">
+        <!-- 中层：主叙事 -->
+        <div class="brand-panel__story">
           <h1 class="brand-panel__title">
             {{ brand.slogan }}<br />
             <span class="brand-panel__highlight">{{ brand.sloganHighlight }}</span>
           </h1>
           <p class="brand-panel__text">{{ brand.description }}</p>
-
-          <div class="assistant-orb">
-            <el-image :src="robotUrl" class="assistant-orb__image" alt="" />
-          </div>
-          <p class="brand-panel__status">
-            <span class="brand-panel__dot" aria-hidden="true" />
-            {{ brand.assistantName }} 在线陪伴
-          </p>
         </div>
+
+        <!-- 底层：三枚价值点 -->
+        <ul class="brand-panel__points" aria-label="平台能力">
+          <li class="brand-panel__point">
+            <span class="brand-panel__point-icon" aria-hidden="true">
+              <el-icon><ChatDotRound /></el-icon>
+            </span>
+            <span class="brand-panel__point-label">倾听对话</span>
+          </li>
+          <li class="brand-panel__point">
+            <span class="brand-panel__point-icon" aria-hidden="true">
+              <el-icon><Notebook /></el-icon>
+            </span>
+            <span class="brand-panel__point-label">情绪日记</span>
+          </li>
+          <li class="brand-panel__point">
+            <span class="brand-panel__point-icon" aria-hidden="true">
+              <el-icon><Sunny /></el-icon>
+            </span>
+            <span class="brand-panel__point-label">温柔成长</span>
+          </li>
+        </ul>
       </div>
     </aside>
 
@@ -63,7 +83,7 @@ const robotUrl = "/AIlogo.png"
 }
 
 // -----------------------------------------------------------------------------
-// 左侧品牌叙事区
+// 左侧品牌叙事区（三层：品牌 / 主标语 / 价值点）
 // -----------------------------------------------------------------------------
 .auth-layout__brand {
   flex: 1 1 50%;
@@ -82,11 +102,13 @@ const robotUrl = "/AIlogo.png"
   z-index: 1;
   display: flex;
   flex-direction: column;
-  gap: var(--xy-space-10);
+  justify-content: center;
+  gap: var(--xy-space-8);
   width: 100%;
-  max-width: 520px;
+  max-width: 560px;
+  min-height: 100%;
   margin: 0 auto;
-  padding: var(--xy-space-10) var(--xy-space-8);
+  padding: var(--xy-space-6) var(--xy-space-8);
 
   &__glow {
     position: absolute;
@@ -95,30 +117,51 @@ const robotUrl = "/AIlogo.png"
     pointer-events: none;
 
     &--a {
-      top: -80px;
-      right: -60px;
-      width: 320px;
-      height: 320px;
-      background: rgba(255, 255, 255, 0.22);
+      top: -100px;
+      right: -80px;
+      width: 280px;
+      height: 280px;
+      background: rgba(255, 255, 255, 0.16);
       animation: xy-halo 9s var(--xy-ease) infinite;
     }
 
     &--b {
-      bottom: -100px;
-      left: -80px;
-      width: 360px;
-      height: 360px;
-      background: rgba(233, 194, 134, 0.28);
+      bottom: -120px;
+      left: -100px;
+      width: 300px;
+      height: 300px;
+      background: rgba(233, 194, 134, 0.18);
       animation: xy-halo 11s var(--xy-ease) infinite reverse;
     }
   }
 
-  &__body {
+  &__top {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    gap: var(--xy-space-5);
-    margin-top: auto;
+
+    // 放大「心耘」标准字与副标（仅登录页左侧，不改全局 BrandLogo）
+    :deep(.brand-logo) {
+      gap: var(--xy-space-3);
+    }
+
+    :deep(.brand-logo__name) {
+      font-size: 36px;
+      letter-spacing: 0.12em;
+    }
+
+    :deep(.brand-logo__subtitle) {
+      margin-top: 4px;
+      font-size: var(--xy-text-base);
+      letter-spacing: 0.16em;
+    }
+  }
+
+  &__story {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--xy-space-2);
   }
 
   &__title {
@@ -134,54 +177,51 @@ const robotUrl = "/AIlogo.png"
   }
 
   &__text {
-    max-width: 40ch;
+    max-width: 42ch;
+    margin: 0;
     font-size: var(--xy-text-md);
-    line-height: var(--xy-leading-relaxed);
-    color: rgba(255, 255, 255, 0.86);
+    line-height: 1.7;
+    color: rgba(255, 255, 255, 0.88);
   }
 
-  &__status {
+  &__points {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--xy-space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  &__point {
     display: inline-flex;
     align-items: center;
     gap: var(--xy-space-2);
-    font-size: var(--xy-text-sm);
+    min-height: 48px;
+    padding: 0 var(--xy-space-5);
+    border-radius: var(--xy-radius-full);
+    background: rgba(255, 255, 255, 0.12);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.16);
+    color: rgba(255, 255, 255, 0.94);
+    font-size: var(--xy-text-md);
     font-weight: 600;
-    color: rgba(255, 255, 255, 0.9);
   }
 
-  &__dot {
-    width: 8px;
-    height: 8px;
+  &__point-label {
+    font-size: 17px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+  }
+
+  &__point-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
     border-radius: 50%;
-    background: #a8e6c9;
-    box-shadow: 0 0 0 4px rgba(168, 230, 201, 0.24);
-    animation: xy-pulse 2.4s var(--xy-ease) infinite;
-  }
-}
-
-.assistant-orb {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 132px;
-  height: 132px;
-  margin-top: var(--xy-space-2);
-  border: 1px solid rgba(255, 255, 255, 0.28);
-  border-radius: 50%;
-  background: linear-gradient(
-    135deg,
-    rgba(255, 255, 255, 0.2) 0%,
-    rgba(255, 255, 255, 0.06) 100%
-  );
-  box-shadow:
-    var(--xy-shadow-lg),
-    inset 0 1px 0 rgba(255, 255, 255, 0.35);
-  // 补齐原先全程缺失的关键帧
-  animation: xy-breathing 5s var(--xy-ease) infinite;
-
-  &__image {
-    width: 64px;
-    height: 64px;
+    background: rgba(255, 255, 255, 0.16);
+    color: #f4d9a4;
   }
 }
 
