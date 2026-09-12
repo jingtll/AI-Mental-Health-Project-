@@ -43,7 +43,7 @@ import type { CurrentEmotion } from "@/types/emotion"
 import { brand, sessionTitlePrefix } from "@/config"
 import { formatRelative } from "@/utils/format"
 
-const assistantAvatar = new URL("@/assets/images/robot-fill.png", import.meta.url).href
+const assistantAvatar = "/AIlogo.png"
 const userAvatar = new URL("@/assets/images/user.jpg", import.meta.url).href
 
 /** 输入上限：模板与计数器共用，避免两处写死不一致 */
@@ -708,18 +708,25 @@ onMounted(() => {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 58px;
-    height: 58px;
+    width: 72px;
+    height: 72px;
     margin-bottom: var(--xy-space-2);
+    padding: 3px;
     border-radius: 50%;
-    background: var(--xy-gradient-brand);
-    // 原实现的 breathing 动画因缺少 @keyframes 从未生效
+    background: var(--xy-surface);
+    box-shadow:
+      0 0 0 2px var(--xy-primary-100),
+      0 0 0 4px var(--xy-primary-50),
+      var(--xy-shadow-sm);
     animation: xy-breathing 5s var(--xy-ease) infinite;
   }
 
   &__avatar {
-    width: 26px;
-    height: 26px;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+    background: var(--xy-primary-50);
   }
 
   &__name {

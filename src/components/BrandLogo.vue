@@ -2,7 +2,7 @@
 /**
  * 心耘品牌标识（图形 + 中文标准字）
  *
- * 图形语义：一株破土的幼苗 —— 对应「耘」即耕耘心田、陪伴生长。
+ * 图形：public/logo.png（统一站点品牌图，替代原内联幼苗 SVG）。
  * 三个布局壳（FrontendLayout / AuthLayout / Sidebar）共用此组件，
  * 品牌名与副标一律取 config 的 brand，禁止各页面自行拼写。
  */
@@ -30,6 +30,7 @@ const props = withDefaults(
   },
 )
 
+const logoSrc = "/logo.png"
 const glyphSize = `${props.size}px`
 </script>
 
@@ -42,27 +43,7 @@ const glyphSize = `${props.size}px`
     :aria-label="props.showText ? undefined : `${brand.name} · ${brand.fullName}`"
   >
     <span class="brand-logo__glyph" :style="{ width: glyphSize, height: glyphSize }">
-      <svg viewBox="0 0 32 32" role="img" aria-hidden="true" focusable="false">
-        <!-- 破土的茎 -->
-        <path
-          d="M16 28V12.5"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2.2"
-          stroke-linecap="round"
-        />
-        <!-- 左叶 -->
-        <path
-          d="M16 21C11.2 21 8.4 18.1 8.4 13.6C13.4 13.6 16 16.5 16 21Z"
-          fill="currentColor"
-          opacity="0.92"
-        />
-        <!-- 右叶 -->
-        <path
-          d="M16 17.6C16 12.6 18.8 9.8 23.6 9.8C23.6 14.8 20.8 17.6 16 17.6Z"
-          fill="currentColor"
-        />
-      </svg>
+      <img :src="logoSrc" class="brand-logo__image" :alt="`${brand.name} logo`" />
     </span>
     <span v-if="props.showText" class="brand-logo__text">
       <span class="brand-logo__name">{{ brand.name }}</span>
@@ -87,15 +68,16 @@ const glyphSize = `${props.size}px`
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    border-radius: var(--xy-radius-md);
-    background: var(--xy-gradient-brand);
-    color: #fff;
-    box-shadow: var(--xy-shadow-brand);
+    overflow: hidden;
+    border-radius: var(--xy-radius-full);
+    background: var(--xy-primary-50);
+    box-shadow: inset 0 0 0 1px var(--xy-border);
+  }
 
-    svg {
-      width: 66%;
-      height: 66%;
-    }
+  &__image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
   }
 
   &__text {
@@ -129,7 +111,7 @@ const glyphSize = `${props.size}px`
     }
 
     .brand-logo__glyph {
-      background: rgba(255, 255, 255, 0.16);
+      background: rgba(255, 255, 255, 0.12);
       border: 1px solid rgba(255, 255, 255, 0.28);
       box-shadow: none;
       backdrop-filter: blur(6px);

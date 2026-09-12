@@ -12,7 +12,7 @@
 import { brand } from "@/config"
 import BrandLogo from "@/components/BrandLogo.vue"
 
-const robotUrl = new URL("@/assets/images/robot-fill.png", import.meta.url).href
+const robotUrl = "/AIlogo.png"
 </script>
 
 <template>

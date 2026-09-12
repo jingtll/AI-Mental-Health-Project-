@@ -16,7 +16,7 @@ import { ElMessage } from "element-plus"
 import { brand } from "@/config"
 
 const router = useRouter()
-const assistantAvatar = new URL("@/assets/images/robot-fill.png", import.meta.url).href
+const assistantAvatar = "/logo.png"
 
 const isLoggedIn = computed(() => localStorage.getItem("token") !== null)
 
